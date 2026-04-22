@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22522" systemVersion="23A344" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="WorkoutDay" representedClassName="WorkoutDay" syncable="YES" codeGenerationType="class">
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isCompleted" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="weekNumber" optional="YES" attributeType="Integer 16" defaultValueString="1" usesScalarValueType="YES"/>
+        <relationship name="exercises" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Exercise" inverseName="workoutDay" inverseEntity="Exercise"/>
+    </entity>
+    <entity name="Exercise" representedClassName="Exercise" syncable="YES" codeGenerationType="class">
+        <attribute name="canonicalExerciseID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="equipment" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="orderIndex" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="station" optional="YES" attributeType="Integer 16" defaultValueString="1" usesScalarValueType="YES"/>
+        <relationship name="logs" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ExerciseLog" inverseName="exercise" inverseEntity="ExerciseLog"/>
+        <relationship name="workoutDay" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="WorkoutDay" inverseName="exercises" inverseEntity="WorkoutDay"/>
+    </entity>
+    <entity name="ExerciseLog" representedClassName="ExerciseLog" syncable="YES" codeGenerationType="class">
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="notes" optional="YES" attributeType="String"/>
+        <attribute name="repsPerSet" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="setsCompleted" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="weightKg" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <relationship name="exercise" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Exercise" inverseName="logs" inverseEntity="Exercise"/>
+    </entity>
+    <entity name="WorkoutSession" representedClassName="WorkoutSession" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="workoutName" optional="YES" attributeType="String"/>
+        <attribute name="startedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="finishedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="sets" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="LoggedSet" inverseName="session" inverseEntity="LoggedSet"/>
+    </entity>
+    <entity name="LoggedSet" representedClassName="LoggedSet" syncable="YES" codeGenerationType="class">
+        <attribute name="canonicalExerciseID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="completedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="exerciseName" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isCompleted" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="reps" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="setIndex" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="weightLbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <relationship name="session" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="WorkoutSession" inverseName="sets" inverseEntity="WorkoutSession"/>
+    </entity>
+    <entity name="ExerciseCatalog" representedClassName="ExerciseCatalog" syncable="YES" codeGenerationType="class">
+        <attribute name="aliases" optional="YES" attributeType="String"/>
+        <attribute name="canonicalName" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="equipment" optional="YES" attributeType="String" defaultValueString="body"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isUnreviewed" optional="YES" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
+        <attribute name="isUserCreated" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="movementPattern" optional="YES" attributeType="String" defaultValueString="conditioning"/>
+        <attribute name="primaryMuscle" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="InBodyEntry" representedClassName="InBodyEntry" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="pdfFilename" optional="YES" attributeType="String"/>
+        <attribute name="rawSourceData" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="rawSourceMimeType" optional="YES" attributeType="String"/>
+        <attribute name="heightInches" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="ageYears" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="weightLbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="bmi" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="bodyFatPercentage" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="bodyFatMassLbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="leanBodyMassLbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="skeletalMuscleMassLbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="dryLeanMassLbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="intracellularWaterLbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="extracellularWaterLbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="totalBodyWaterLbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="ecwTbwRatio" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="visceralFatLevel" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="basalMetabolicRateKcal" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="rightArmLeanLbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="rightArmLeanPct" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="leftArmLeanLbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="leftArmLeanPct" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="trunkLeanLbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="trunkLeanPct" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="rightLegLeanLbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="rightLegLeanPct" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="leftLegLeanLbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="leftLegLeanPct" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+    </entity>
+</model>

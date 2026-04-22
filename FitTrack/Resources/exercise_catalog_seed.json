@@ -1,0 +1,352 @@
+[
+  {
+    "canonicalName": "BB Bench Press",
+    "aliases": ["barbell bench press", "bench press", "bb bench", "flat bench press", "flat barbell bench"],
+    "movementPattern": "push",
+    "equipment": "barbell",
+    "primaryMuscle": "chest"
+  },
+  {
+    "canonicalName": "DB Bench Press",
+    "aliases": ["dumbbell bench press", "db bench", "flat dumbbell bench", "dumbbell flat bench"],
+    "movementPattern": "push",
+    "equipment": "dumbbell",
+    "primaryMuscle": "chest"
+  },
+  {
+    "canonicalName": "BB Deadlift",
+    "aliases": ["barbell deadlift", "deadlift", "conventional deadlift"],
+    "movementPattern": "hinge",
+    "equipment": "barbell",
+    "primaryMuscle": "back"
+  },
+  {
+    "canonicalName": "DB Deadlift",
+    "aliases": ["dumbbell deadlift", "db dl"],
+    "movementPattern": "hinge",
+    "equipment": "dumbbell",
+    "primaryMuscle": "back"
+  },
+  {
+    "canonicalName": "BB Back Squat",
+    "aliases": ["barbell back squat", "back squat", "high bar back squat", "low bar back squat"],
+    "movementPattern": "squat",
+    "equipment": "barbell",
+    "primaryMuscle": "quads"
+  },
+  {
+    "canonicalName": "BB Front Squat",
+    "aliases": ["barbell front squat", "front squat", "fs"],
+    "movementPattern": "squat",
+    "equipment": "barbell",
+    "primaryMuscle": "quads"
+  },
+  {
+    "canonicalName": "DB Squat",
+    "aliases": ["dumbbell squat", "db squat"],
+    "movementPattern": "squat",
+    "equipment": "dumbbell",
+    "primaryMuscle": "quads"
+  },
+  {
+    "canonicalName": "BB Row",
+    "aliases": ["barbell row", "bent over barbell row", "bb bent row", "pendlay row"],
+    "movementPattern": "pull",
+    "equipment": "barbell",
+    "primaryMuscle": "back"
+  },
+  {
+    "canonicalName": "DB Bent Over Row",
+    "aliases": ["dumbbell row", "db row", "dumbbell bent over row", "bent over dumbbell row"],
+    "movementPattern": "pull",
+    "equipment": "dumbbell",
+    "primaryMuscle": "back"
+  },
+  {
+    "canonicalName": "BB Overhead Press",
+    "aliases": ["barbell overhead press", "barbell press", "ohp", "strict press", "military press", "bb ohp"],
+    "movementPattern": "push",
+    "equipment": "barbell",
+    "primaryMuscle": "shoulders"
+  },
+  {
+    "canonicalName": "DB Overhead Press",
+    "aliases": ["dumbbell overhead press", "db ohp", "dumbbell shoulder press", "db shoulder press", "seated db press"],
+    "movementPattern": "push",
+    "equipment": "dumbbell",
+    "primaryMuscle": "shoulders"
+  },
+  {
+    "canonicalName": "BB Clean",
+    "aliases": ["barbell clean", "power clean", "clean"],
+    "movementPattern": "pull",
+    "equipment": "barbell",
+    "primaryMuscle": "full body"
+  },
+  {
+    "canonicalName": "BB Snatch",
+    "aliases": ["barbell snatch", "power snatch", "snatch"],
+    "movementPattern": "pull",
+    "equipment": "barbell",
+    "primaryMuscle": "full body"
+  },
+  {
+    "canonicalName": "BB Romanian Deadlift",
+    "aliases": ["barbell romanian deadlift", "bb rdl", "romanian deadlift", "rdl"],
+    "movementPattern": "hinge",
+    "equipment": "barbell",
+    "primaryMuscle": "hamstrings"
+  },
+  {
+    "canonicalName": "DB Romanian Deadlift",
+    "aliases": ["dumbbell romanian deadlift", "db rdl", "dumbbell rdl"],
+    "movementPattern": "hinge",
+    "equipment": "dumbbell",
+    "primaryMuscle": "hamstrings"
+  },
+  {
+    "canonicalName": "KB Front Squat",
+    "aliases": ["kettlebell front squat", "kb fs", "double kb front squat"],
+    "movementPattern": "squat",
+    "equipment": "kettlebell",
+    "primaryMuscle": "quads"
+  },
+  {
+    "canonicalName": "KB Goblet Squat",
+    "aliases": ["kettlebell goblet squat", "goblet squat", "kb goblet"],
+    "movementPattern": "squat",
+    "equipment": "kettlebell",
+    "primaryMuscle": "quads"
+  },
+  {
+    "canonicalName": "KB Swing",
+    "aliases": ["kettlebell swing", "russian swing", "american swing", "kb swings"],
+    "movementPattern": "hinge",
+    "equipment": "kettlebell",
+    "primaryMuscle": "posterior chain"
+  },
+  {
+    "canonicalName": "KB Snatch",
+    "aliases": ["kettlebell snatch", "kb snatch single arm"],
+    "movementPattern": "pull",
+    "equipment": "kettlebell",
+    "primaryMuscle": "full body"
+  },
+  {
+    "canonicalName": "KB Clean",
+    "aliases": ["kettlebell clean", "kb clean single arm", "double kb clean"],
+    "movementPattern": "pull",
+    "equipment": "kettlebell",
+    "primaryMuscle": "full body"
+  },
+  {
+    "canonicalName": "KB Press",
+    "aliases": ["kettlebell press", "kb overhead press", "kb shoulder press", "kb military press"],
+    "movementPattern": "push",
+    "equipment": "kettlebell",
+    "primaryMuscle": "shoulders"
+  },
+  {
+    "canonicalName": "KB High Pull",
+    "aliases": ["kettlebell high pull", "kb high pulls"],
+    "movementPattern": "pull",
+    "equipment": "kettlebell",
+    "primaryMuscle": "back"
+  },
+  {
+    "canonicalName": "DB Curl",
+    "aliases": ["dumbbell curl", "db biceps curl", "alternating db curl", "db bicep curl"],
+    "movementPattern": "pull",
+    "equipment": "dumbbell",
+    "primaryMuscle": "biceps"
+  },
+  {
+    "canonicalName": "DB Lateral Raise",
+    "aliases": ["dumbbell lateral raise", "db side raise", "lateral raise", "side lateral raise"],
+    "movementPattern": "push",
+    "equipment": "dumbbell",
+    "primaryMuscle": "shoulders"
+  },
+  {
+    "canonicalName": "DB Front Raise",
+    "aliases": ["dumbbell front raise", "db front raises", "front raise"],
+    "movementPattern": "push",
+    "equipment": "dumbbell",
+    "primaryMuscle": "shoulders"
+  },
+  {
+    "canonicalName": "DB Reverse Fly",
+    "aliases": ["dumbbell reverse fly", "db rear delt fly", "reverse fly", "rear delt fly"],
+    "movementPattern": "pull",
+    "equipment": "dumbbell",
+    "primaryMuscle": "shoulders"
+  },
+  {
+    "canonicalName": "DB Hinge to Curl",
+    "aliases": ["dumbbell hinge to curl", "db hinge curl", "hinge to curl"],
+    "movementPattern": "hinge",
+    "equipment": "dumbbell",
+    "primaryMuscle": "posterior chain"
+  },
+  {
+    "canonicalName": "Pull Ups",
+    "aliases": ["pull up", "pullup", "pullups", "strict pull up", "kipping pull up"],
+    "movementPattern": "pull",
+    "equipment": "body",
+    "primaryMuscle": "back"
+  },
+  {
+    "canonicalName": "Push Ups",
+    "aliases": ["push up", "pushup", "pushups", "strict push up"],
+    "movementPattern": "push",
+    "equipment": "body",
+    "primaryMuscle": "chest"
+  },
+  {
+    "canonicalName": "Box Jumps",
+    "aliases": ["box jump", "box jumps over", "step ups to box"],
+    "movementPattern": "squat",
+    "equipment": "box",
+    "primaryMuscle": "legs"
+  },
+  {
+    "canonicalName": "Burpees",
+    "aliases": ["burpee", "burpee over bar", "bar facing burpees"],
+    "movementPattern": "conditioning",
+    "equipment": "body",
+    "primaryMuscle": "full body"
+  },
+  {
+    "canonicalName": "Wall Balls",
+    "aliases": ["wall ball", "wall ball shots", "medicine ball wall ball", "mb wall ball"],
+    "movementPattern": "squat",
+    "equipment": "medicineBall",
+    "primaryMuscle": "full body"
+  },
+  {
+    "canonicalName": "Toes to Bar",
+    "aliases": ["t2b", "ttb", "toes to bar", "knees to elbows", "k2e"],
+    "movementPattern": "core",
+    "equipment": "body",
+    "primaryMuscle": "abs"
+  },
+  {
+    "canonicalName": "Bike Calories",
+    "aliases": ["bike cals", "assault bike", "echo bike", "bike erg", "air bike"],
+    "movementPattern": "conditioning",
+    "equipment": "bike",
+    "primaryMuscle": "cardio"
+  },
+  {
+    "canonicalName": "Row Calories",
+    "aliases": ["row cals", "rowing", "rower", "concept2 row", "row erg"],
+    "movementPattern": "conditioning",
+    "equipment": "rower",
+    "primaryMuscle": "cardio"
+  },
+  {
+    "canonicalName": "Ski Calories",
+    "aliases": ["ski cals", "ski erg", "skiing"],
+    "movementPattern": "conditioning",
+    "equipment": "ski",
+    "primaryMuscle": "cardio"
+  },
+  {
+    "canonicalName": "Run",
+    "aliases": ["running", "run distance", "treadmill run", "outdoor run"],
+    "movementPattern": "conditioning",
+    "equipment": "body",
+    "primaryMuscle": "cardio"
+  },
+  {
+    "canonicalName": "Sled Push",
+    "aliases": ["prowler push", "sled pushes", "sled drive"],
+    "movementPattern": "conditioning",
+    "equipment": "sled",
+    "primaryMuscle": "legs"
+  },
+  {
+    "canonicalName": "Farmer Carry",
+    "aliases": ["farmers carry", "farmer walk", "farmers walk", "loaded carry"],
+    "movementPattern": "carry",
+    "equipment": "dumbbell",
+    "primaryMuscle": "full body"
+  },
+  {
+    "canonicalName": "BOSU Crunches",
+    "aliases": ["bosu crunch", "bosu sit ups", "bosu ball crunch"],
+    "movementPattern": "core",
+    "equipment": "bosu",
+    "primaryMuscle": "abs"
+  },
+  {
+    "canonicalName": "BOSU Plank",
+    "aliases": ["bosu plank hold", "bosu ball plank"],
+    "movementPattern": "core",
+    "equipment": "bosu",
+    "primaryMuscle": "abs"
+  },
+  {
+    "canonicalName": "TRX Row",
+    "aliases": ["trx rows", "suspension row", "inverted row trx"],
+    "movementPattern": "pull",
+    "equipment": "trx",
+    "primaryMuscle": "back"
+  },
+  {
+    "canonicalName": "Glider Pushups",
+    "aliases": ["slider push up", "valslide push up", "glider push ups"],
+    "movementPattern": "push",
+    "equipment": "body",
+    "primaryMuscle": "chest"
+  },
+  {
+    "canonicalName": "Landmine Twist",
+    "aliases": ["landmine twists", "landmine rotation", "landmine russian twist"],
+    "movementPattern": "core",
+    "equipment": "landmine",
+    "primaryMuscle": "abs"
+  },
+  {
+    "canonicalName": "Landmine Lunge",
+    "aliases": ["landmine lunges", "landmine reverse lunge", "landmine split squat"],
+    "movementPattern": "lunge",
+    "equipment": "landmine",
+    "primaryMuscle": "legs"
+  },
+  {
+    "canonicalName": "Bulgarian Split Squat",
+    "aliases": ["bss", "rear foot elevated split squat", "rfe split squat", "db bulgarian split squat"],
+    "movementPattern": "lunge",
+    "equipment": "dumbbell",
+    "primaryMuscle": "quads"
+  },
+  {
+    "canonicalName": "Walking Lunge",
+    "aliases": ["walking lunges", "db walking lunge", "lunge walk"],
+    "movementPattern": "lunge",
+    "equipment": "dumbbell",
+    "primaryMuscle": "legs"
+  },
+  {
+    "canonicalName": "Plank",
+    "aliases": ["front plank", "plank hold", "elbow plank"],
+    "movementPattern": "core",
+    "equipment": "body",
+    "primaryMuscle": "abs"
+  },
+  {
+    "canonicalName": "Double Unders",
+    "aliases": ["du", "double under", "du jump rope", "jump rope doubles"],
+    "movementPattern": "conditioning",
+    "equipment": "body",
+    "primaryMuscle": "cardio"
+  },
+  {
+    "canonicalName": "Handstand Pushup",
+    "aliases": ["hspu", "strict hspu", "kipping hspu", "handstand push up"],
+    "movementPattern": "push",
+    "equipment": "body",
+    "primaryMuscle": "shoulders"
+  }
+]

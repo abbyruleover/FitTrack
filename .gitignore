@@ -1,0 +1,35 @@
+# macOS
+.DS_Store
+
+# Xcode user-specific
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+
+# Generated Xcode project — we use xcodegen, project.yml is the source of truth.
+# Run `xcodegen generate` after cloning.
+*.xcodeproj/
+
+# Build artifacts
+build/
+DerivedData/
+*.moved-aside
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Packages/
+Package.pins
+Package.resolved
+
+# CocoaPods (not used)
+Pods/
+
+# Carthage (not used)
+Carthage/Build/
+
+# Logs
+*.log
