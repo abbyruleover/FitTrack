@@ -6,12 +6,12 @@ import Foundation
 /// inside SwiftUI previews so they don't pollute the on-disk store.
 struct PersistenceController {
     static let shared = PersistenceController()
+    static let appGroupID = "group.com.abhaygulati.fittrack.ag2026"
 
     /// In-memory store for SwiftUI previews — never written to disk.
     static let preview: PersistenceController = {
         let controller = PersistenceController(inMemory: true)
         let ctx = controller.container.viewContext
-        // Seed a single sample WorkoutDay so previews render with realistic data.
         let sample = WorkoutDay(context: ctx)
         sample.id = UUID()
         sample.name = "Tuesday WOD"
@@ -28,38 +28,49 @@ struct PersistenceController {
         container = NSPersistentContainer(name: "FitTrack")
         if let desc = container.persistentStoreDescriptions.first {
             if inMemory {
-                // Routes the store to /dev/null so nothing persists between launches.
                 desc.url = URL(fileURLWithPath: "/dev/null")
+            } else if let sharedURL = FileManager.default.containerURL(
+                forSecurityApplicationGroupIdentifier: Self.appGroupID
+            ) {
+                Self.migrateStoreIfNeeded(to: sharedURL)
+                desc.url = sharedURL.appendingPathComponent("FitTrack.sqlite")
             }
-            // Lightweight migration: when the .xcdatamodeld picks up a new
-            // attribute or entity, Core Data infers the mapping and migrates the
-            // user's existing on-disk store in place instead of refusing to
-            // load it. Without this, an app update that touches the schema
-            // would either crash on launch or silently lose every workout the
-            // user logged. Adding optional attributes / new entities is safe;
-            // renames or required-non-default fields still need a versioned
-            // model + manual mapping (see Apple's lightweight-migration rules).
             desc.shouldMigrateStoreAutomatically = true
             desc.shouldInferMappingModelAutomatically = true
         }
         container.loadPersistentStores { desc, error in
             if let error = error as NSError? {
-                // Crash early in development if the store fails to load — silent failures here
-                // would hide schema/migration bugs that matter.
                 fatalError("Core Data store failed to load: \(error), \(error.userInfo)")
             }
-            // Log the on-disk path once so the user can confirm where their
-            // workout history actually lives (App Group container, app
-            // sandbox, etc.) when investigating "did my data move?" worries
-            // after an update.
             if !inMemory, let url = desc.url {
                 AppLogger.shared.log("CoreData store loaded — \(url.path)", category: "data")
             }
         }
         container.viewContext.automaticallyMergesChangesFromParent = true
-        // Idempotent — skips entries whose canonicalName already exists.
         if !inMemory {
             ExerciseCatalogService.shared.seedIfNeeded(context: container.viewContext)
         }
+    }
+
+    /// Copy the SQLite files from the old app-sandbox location to the shared
+    /// App Group container on first launch after the migration. Uses copy (not
+    /// move) so the original stays intact as a safety net.
+    private static func migrateStoreIfNeeded(to sharedDir: URL) {
+        let fm = FileManager.default
+        let oldDir = NSPersistentContainer.defaultDirectoryURL()
+        let newStore = sharedDir.appendingPathComponent("FitTrack.sqlite")
+        let oldStore = oldDir.appendingPathComponent("FitTrack.sqlite")
+        guard fm.fileExists(atPath: oldStore.path), !fm.fileExists(atPath: newStore.path) else { return }
+        for ext in ["", "-wal", "-shm"] {
+            let src = oldDir.appendingPathComponent("FitTrack.sqlite\(ext)")
+            let dst = sharedDir.appendingPathComponent("FitTrack.sqlite\(ext)")
+            guard fm.fileExists(atPath: src.path) else { continue }
+            do {
+                try fm.copyItem(at: src, to: dst)
+            } catch {
+                AppLogger.shared.log("Store migration copy failed for \(ext): \(error)", category: "data")
+            }
+        }
+        AppLogger.shared.log("Core Data migrated to shared container", category: "data")
     }
 }

@@ -74,6 +74,10 @@ struct ProgressView: View {
             }
             .task {
                 hiitDays = await HealthKitService.shared.hiitWorkoutDates(days: 365)
+                // Cache for the home screen widget (can't use HealthKit from extensions)
+                if let shared = UserDefaults(suiteName: PersistenceController.appGroupID) {
+                    shared.set(hiitDays.map { $0.timeIntervalSince1970 }, forKey: "cachedHiitDays")
+                }
                 async let h = HealthKitService.shared.latestHRVms()
                 async let k = HealthKitService.shared.weeklyActiveEnergyKcal()
                 async let m = HealthKitService.shared.weeklyExerciseMinutes()

@@ -54,14 +54,13 @@ targets:
         excludes:
           - "**/.DS_Store"
           - "Info.plist"
-      # Shared with the app target so both can see the ActivityAttributes
-      # struct. Listed explicitly (instead of group-include) because the
-      # widget target needs only this one file from FitTrack/.
       - path: FitTrack/Models/WorkoutActivityAttributes.swift
+      - path: FitTrack/Models/FitTrack.xcdatamodeld
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.abhaygulati.fittrack.ag2026.widgets
         INFOPLIST_FILE: FitTrackWidgets/Info.plist
+        CODE_SIGN_ENTITLEMENTS: FitTrackWidgets/FitTrackWidgets.entitlements
         TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MACCATALYST: NO
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"

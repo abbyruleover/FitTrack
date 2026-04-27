@@ -7,5 +7,7 @@ import WidgetKit
 struct FitTrackWidgetsBundle: WidgetBundle {
     var body: some Widget {
         WorkoutLiveActivity()
+        WeeklyHeatmapWidget()
+        ProgressSparklineWidget()
     }
 }
