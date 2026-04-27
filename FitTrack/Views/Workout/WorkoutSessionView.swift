@@ -314,6 +314,7 @@ private struct ExerciseLogCard: View {
                 ForEach(store.drafts(for: exercise.name)) { draft in
                     SetRow(
                         draft: draft,
+                        isPR: store.prDraftIDs.contains(draft.id),
                         previous: store.previous(for: exercise.name),
                         onWeight: { store.updateWeight(for: exercise.name, draftID: draft.id, value: $0) },
                         onReps: { store.updateReps(for: exercise.name, draftID: draft.id, value: $0) },
@@ -345,6 +346,7 @@ private struct ExerciseLogCard: View {
 
 private struct SetRow: View {
     let draft: SessionStore.SetDraft
+    let isPR: Bool
     let previous: String?
     let onWeight: (Double) -> Void
     let onReps: (Int) -> Void
@@ -398,16 +400,20 @@ private struct SetRow: View {
                 }
 
             Button(action: onCheck) {
-                Image(systemName: draft.isCompleted ? "checkmark.square.fill" : "square")
+                Image(systemName: draft.isCompleted
+                      ? (isPR ? "trophy.fill" : "checkmark.square.fill")
+                      : "square")
                     .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(draft.isCompleted ? Theme.Colors.green : Theme.Colors.textTertiary)
+                    .foregroundStyle(draft.isCompleted
+                                     ? (isPR ? Theme.Colors.accent : Theme.Colors.green)
+                                     : Theme.Colors.textTertiary)
             }
             .frame(width: 28, alignment: .center)
         }
         .padding(.vertical, 2)
         .background(
             draft.isCompleted
-                ? Theme.Colors.green.opacity(0.10)
+                ? (isPR ? Theme.Colors.accent.opacity(0.12) : Theme.Colors.green.opacity(0.10))
                 : Color.clear
         )
         .onAppear {

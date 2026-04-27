@@ -214,11 +214,26 @@ struct ProgressView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             sectionHeader(label: "Workouts", route: AllWorkoutsRoute())
             workoutCountTiles
-            WorkoutCalendarView(markedDays: hiitDays) { day in
+            WorkoutCalendarView(dayInfo: computedDayInfo) { day in
                 AppLogger.shared.log("calendar day tapped → \(day)", category: "ui")
                 routeCalendarTap(day)
             }
         }
+    }
+
+    private var computedDayInfo: [Date: WorkoutCalendarView.DaySource] {
+        let cal = Calendar.current
+        let fittrackDays: Set<Date> = Set(allSessions.compactMap {
+            guard let d = $0.startedAt else { return nil }
+            return cal.startOfDay(for: d)
+        })
+        var info: [Date: WorkoutCalendarView.DaySource] = [:]
+        for d in hiitDays.union(fittrackDays) {
+            let hasWatch = hiitDays.contains(d)
+            let hasFT = fittrackDays.contains(d)
+            info[d] = hasWatch && hasFT ? .both : (hasFT ? .fittrackOnly : .watchOnly)
+        }
+        return info
     }
 
     /// 1-click router for calendar taps. The old flow always pushed

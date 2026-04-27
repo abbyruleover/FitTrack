@@ -109,13 +109,13 @@ struct WorkoutView: View {
             }
             .task {
                 await CalendarService.shared.requestAuthorizationIfNeeded()
-                nextCalendarClass = await CalendarService.shared.nextFNSClass()
+                nextCalendarClass = await CalendarService.shared.nextClass()
             }
             .onChange(of: scenePhase) { _, phase in
                 guard phase == .active else { return }
                 Task {
                     await CalendarService.shared.requestAuthorizationIfNeeded()
-                    nextCalendarClass = await CalendarService.shared.nextFNSClass()
+                    nextCalendarClass = await CalendarService.shared.nextClass()
                 }
             }
         }
@@ -142,7 +142,7 @@ struct WorkoutView: View {
     private var welcomeCard: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Good \(timeOfDay), Abhay")
+                Text("Good \(timeOfDay)\(userGreetingName)")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.Colors.textPrimary)
                 Text(dailyTagline)
@@ -179,7 +179,7 @@ struct WorkoutView: View {
                 Text("UPCOMING · \(relativeWhenLabel(for: event))")
                     .font(Theme.Fonts.mono(10))
                     .foregroundStyle(Theme.Colors.accent)
-                Text(event.title ?? "FNS Gym Class")
+                Text(event.title ?? "Gym Class")
                     .font(Theme.Fonts.header(15))
                     .foregroundStyle(Theme.Colors.textPrimary)
                     .lineLimit(1)
@@ -199,6 +199,11 @@ struct WorkoutView: View {
         case 12..<17: return "afternoon"
         default:      return "evening"
         }
+    }
+
+    private var userGreetingName: String {
+        let name = UserDefaults.standard.string(forKey: "user.displayName") ?? ""
+        return name.isEmpty ? "" : ", \(name)"
     }
 
     private var dailyTagline: String {

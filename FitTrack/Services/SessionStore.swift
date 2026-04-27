@@ -42,6 +42,9 @@ final class SessionStore: ObservableObject {
     /// view drives display order off the parsed workout sections.
     @Published var drafts: [String: [SetDraft]] = [:]
 
+    /// Draft IDs whose logged weight beat every prior set for that exercise.
+    @Published var prDraftIDs: Set<UUID> = []
+
     /// Exercise names the user has marked Skip in this session. In-memory
     /// only; the next session for the same workout starts with skip cleared.
     @Published var skippedExercises: Set<String> = []
@@ -158,10 +161,12 @@ final class SessionStore: ObservableObject {
             } catch {
                 AppLogger.shared.log("✗ FAILED to save set \(rows[i].setIndex) of \(exerciseName): \(error)", category: "session")
             }
+            checkForPR(exerciseName: exerciseName, weight: rows[i].weightLbs, draftID: rows[i].id)
         } else if let oid = rows[i].loggedID,
                   let obj = try? context.existingObject(with: oid) {
             context.delete(obj)
             rows[i].loggedID = nil
+            prDraftIDs.remove(rows[i].id)
             do {
                 try context.save()
                 AppLogger.shared.log("uncheck → deleted set \(rows[i].setIndex) of \(exerciseName)", category: "session")
@@ -186,6 +191,23 @@ final class SessionStore: ObservableObject {
             return id
         }
         return ExerciseCatalogService.shared.resolve(name: exerciseName, context: context).id
+    }
+
+    /// Check if the just-logged weight beats every prior set for this exercise.
+    private func checkForPR(exerciseName: String, weight: Double, draftID: UUID) {
+        guard weight > 0 else { return }
+        let req = NSFetchRequest<LoggedSet>(entityName: "LoggedSet")
+        req.predicate = NSPredicate(
+            format: "exerciseName ==[c] %@ AND isCompleted == YES AND session != %@",
+            exerciseName, session
+        )
+        req.sortDescriptors = [NSSortDescriptor(key: "weightLbs", ascending: false)]
+        req.fetchLimit = 1
+        let best = try? context.fetch(req).first
+        if best == nil || weight > best!.weightLbs {
+            prDraftIDs.insert(draftID)
+            AppLogger.shared.log("PR! \(exerciseName) \(weight) lbs beats prior \(best?.weightLbs ?? 0)", category: "session")
+        }
     }
 
     // MARK: - PREVIOUS lookup

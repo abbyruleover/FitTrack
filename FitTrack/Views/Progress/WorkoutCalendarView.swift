@@ -7,8 +7,9 @@ import SwiftUI
 ///
 /// Pure layout — the parent owns the marked-days set and the tap callback.
 struct WorkoutCalendarView: View {
-    /// Days (start-of-day) that should render a pink dot.
-    let markedDays: Set<Date>
+    enum DaySource { case watchOnly, fittrackOnly, both }
+
+    let dayInfo: [Date: DaySource]
     /// Fired when the user taps a day cell. Only marked days fire.
     let onSelectDay: (Date) -> Void
 
@@ -22,6 +23,7 @@ struct WorkoutCalendarView: View {
             header
             weekdayRow
             grid
+            legend
         }
         .padding(Theme.Spacing.md)
         .background(
@@ -98,26 +100,25 @@ struct WorkoutCalendarView: View {
             Color.clear.frame(height: 38)
         case .day(let date):
             let day = calendar.startOfDay(for: date)
-            let marked = markedDays.contains(day)
+            let source = dayInfo[day]
+            let marked = source != nil
             let isToday = calendar.isDateInToday(day)
+            let dotColor = source.map { dotColor(for: $0) } ?? Theme.Colors.pink
             Button {
                 guard marked else { return }
                 onSelectDay(day)
             } label: {
                 ZStack {
                     if marked && isToday {
-                        // Today + has a workout — pink fill with the lime
-                        // accent ring around it so it reads "marked AND today"
-                        // rather than collapsing into one or the other state.
                         Circle()
-                            .fill(Theme.Colors.pink)
+                            .fill(dotColor)
                             .frame(width: 32, height: 32)
                         Circle()
                             .stroke(Theme.Colors.accent, lineWidth: 2)
                             .frame(width: 36, height: 36)
                     } else if marked {
                         Circle()
-                            .fill(Theme.Colors.pink)
+                            .fill(dotColor)
                             .frame(width: 32, height: 32)
                     } else if isToday {
                         Circle()
@@ -139,6 +140,37 @@ struct WorkoutCalendarView: View {
             }
             .buttonStyle(.plain)
             .disabled(!marked)
+        }
+    }
+
+    private func dotColor(for source: DaySource) -> Color {
+        switch source {
+        case .watchOnly:    return Theme.Colors.orange
+        case .fittrackOnly: return Theme.Colors.accent
+        case .both:         return Theme.Colors.pink
+        }
+    }
+
+    // MARK: - Legend
+
+    private var legend: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            legendDot(color: Theme.Colors.orange, label: "Watch")
+            legendDot(color: Theme.Colors.accent, label: "FitTrack")
+            legendDot(color: Theme.Colors.pink, label: "Both")
+            Spacer()
+        }
+        .padding(.top, Theme.Spacing.xs)
+    }
+
+    private func legendDot(color: Color, label: String) -> some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+            Text(label)
+                .font(Theme.Fonts.mono(10))
+                .foregroundStyle(Theme.Colors.textTertiary)
         }
     }
 

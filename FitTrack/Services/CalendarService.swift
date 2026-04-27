@@ -4,30 +4,31 @@ import EventKit
 /// Read-only Apple Calendar access for the Home welcome card. Modeled on
 /// `HealthKitService`: `@MainActor` singleton, idempotent permission request,
 /// `@Published var isAuthorized`. The only consumer right now is
-/// `WorkoutView.welcomeCard`, which surfaces the next "FNS Gym Class" event
-/// from the user's default calendar so they can see when to be at the gym
+/// `WorkoutView.welcomeCard`, which surfaces the next upcoming gym class event
+/// from the user's calendar so they can see when to be at the gym
 /// without bouncing into the Calendar app.
 ///
-/// Title match is case-insensitive equality on `"FNS Gym Class"` — narrow on
-/// purpose so an unrelated meeting doesn't hijack the slot. If the event is
-/// renamed by the gym, this is a one-line follow-up.
+/// The search keyword is user-configurable via Settings ("Gym Class Keyword").
+/// Default is empty, which matches any event. Setting it to e.g. "CrossFit"
+/// or "Gym" narrows the match.
 @MainActor
 final class CalendarService: ObservableObject {
     static let shared = CalendarService()
 
     private let store = EKEventStore()
 
-    /// True once the user has granted full or write-only access to events.
-    /// Drives whether the welcome card even attempts to fetch — the greeting
-    /// + tagline still render without it.
     @Published var isAuthorized: Bool = false
 
-    /// Substring match (case-insensitive) on the calendar event title. We
-    /// search for "fns" rather than the full "FNS Gym Class" because real
-    /// calendar entries vary — "FNS 6:15 AM Class", "Gym Class — FNS Cupertino",
-    /// "FNS Strength" all match. The brand string is unique enough that we
-    /// won't catch unrelated events.
-    private static let titleNeedle = "fns"
+    /// User-configurable keyword for matching calendar events. Stored in
+    /// UserDefaults so it persists across launches. Empty string matches
+    /// any event (returns the soonest one).
+    static var titleKeyword: String {
+        get {
+            if let v = UserDefaults.standard.string(forKey: "calendar.eventKeyword") { return v }
+            return "FNS"
+        }
+        set { UserDefaults.standard.set(newValue, forKey: "calendar.eventKeyword") }
+    }
 
     /// How far ahead to look for the next class. 14 days handles a
     /// once-a-week schedule plus a buffer if the user opens the app during a
@@ -90,30 +91,34 @@ final class CalendarService: ObservableObject {
 
     // MARK: - Queries
 
-    /// Soonest event whose title contains "fns" (case-insensitive) in the
-    /// next 14 days across every calendar the user has. Returns nil if
-    /// permission is denied or no matching event exists in the window.
-    /// We search every calendar — the gym class might live on a shared
-    /// calendar the user subscribed to, not the default one.
-    func nextFNSClass() async -> EKEvent? {
+    /// Soonest event matching the user's keyword (case-insensitive) in the
+    /// next 14 days across every calendar. If keyword is empty, returns the
+    /// soonest event overall. Returns nil if permission is denied or no
+    /// matching event exists.
+    func nextClass() async -> EKEvent? {
         guard isAuthorized else {
-            AppLogger.shared.log("CalendarService: nextFNSClass aborted — not authorized", category: "calendar")
+            AppLogger.shared.log("CalendarService: nextClass aborted — not authorized", category: "calendar")
             return nil
         }
         let now = Date()
-        guard let weekOut = Calendar.current.date(byAdding: .day, value: Self.lookAheadDays, to: now) else {
+        guard let end = Calendar.current.date(byAdding: .day, value: Self.lookAheadDays, to: now) else {
             return nil
         }
         let calendars = store.calendars(for: .event)
-        let predicate = store.predicateForEvents(withStart: now, end: weekOut, calendars: calendars)
+        let predicate = store.predicateForEvents(withStart: now, end: end, calendars: calendars)
         let events = store.events(matching: predicate)
-        let matches = events.filter { ($0.title ?? "").lowercased().contains(Self.titleNeedle) }
+        let needle = Self.titleKeyword.lowercased().trimmingCharacters(in: .whitespaces)
+        guard !needle.isEmpty else {
+            AppLogger.shared.log("CalendarService: no keyword set — skipping event search", category: "calendar")
+            return nil
+        }
+        let matches = events.filter { ($0.title ?? "").lowercased().contains(needle) }
         let soonest = matches
             .sorted { ($0.startDate ?? .distantFuture) < ($1.startDate ?? .distantFuture) }
             .first
 
         AppLogger.shared.log(
-            "CalendarService: scanned \(events.count) events across \(calendars.count) calendars over \(Self.lookAheadDays)d — \(matches.count) matched '\(Self.titleNeedle)' → \(soonest?.title ?? "none")",
+            "CalendarService: scanned \(events.count) events across \(calendars.count) calendars — \(matches.count) matched '\(needle)' → \(soonest?.title ?? "none")",
             category: "calendar"
         )
         return soonest

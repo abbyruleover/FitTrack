@@ -24,6 +24,31 @@ enum Changelog {
     /// Newest first. The first element is treated as the "current" release.
     static let entries: [Entry] = [
         Entry(
+            version: "0.9.0",
+            date: dateFrom("2026-04-27"),
+            highlights: [
+                "Live PR detection: when a logged set beats your all-time best weight for that exercise, the checkmark flips to a trophy badge in lime — instant feedback at the moment you hit a personal record.",
+                "Calendar color-coding: workout calendar dots now distinguish Watch-only (orange), FitTrack-only (lime), and Watch+FitTrack (pink) days, with a legend below the grid.",
+                "Body composition goals: tap the target icon next to any metric in All Metrics to set a goal — renders as a dashed orange line on the trend chart. Stored per-metric, clearable anytime.",
+                "Export/import backup: Settings → Backup lets you export all sessions, sets, and InBody scans (including raw PDFs) as a single JSON file, and import it back on any device. Idempotent — re-importing skips existing records.",
+                "App Store compliance: greeting name and calendar keyword are now user-configurable in Settings → Preferences. Privacy policy and support links added to About."
+            ]
+        ),
+        Entry(
+            version: "0.8.0",
+            date: dateFrom("2026-04-23"),
+            highlights: [
+                "Foundation Models InBody parser: on iOS 26+ Apple Intelligence devices, InBody scan text is fed to the on-device LLM via @Generable for structured metric extraction — more accurate than regex, with automatic fallback to the Vision OCR + spatial parser on older devices.",
+                "Minimized session pill timer now ticks live instead of showing 00:00 (fixed nested ObservableObject issue).",
+                "InBody scan date is editable during import via DatePicker.",
+                "Live Activity dismisses immediately on workout finish (was persisting on lock screen).",
+                "InBody detail view keyboard now appears when tapping Edit cells (fixed unstable row IDs).",
+                "Body tab charts skip 0-value entries instead of drawing drops to zero.",
+                "HR station color bands clipped to chart frame.",
+                "All Metrics expanded from 8 to 18 chartable metrics: Fat Mass, Dry Lean, ICW, ECW, TBW, and all 5 segmental lean regions."
+            ]
+        ),
+        Entry(
             version: "0.7.2",
             date: dateFrom("2026-04-22"),
             highlights: [
@@ -35,7 +60,7 @@ enum Changelog {
             date: dateFrom("2026-04-22"),
             highlights: [
                 "Today’s highlights card now reflects the live session: once you’ve logged any sets, the planned station list flips to a LOGGED list — green ✓, station label (STN 1 / STN 2 / etc.), exercise name, and the set count for that exercise. Lookup is canonical-ID based so renamed exercises still match the planned station.",
-                "Welcome card actually finds your gym class now. Title match loosened to a case-insensitive substring on ‘FNS’, search window widened from 7 to 14 days, and full diagnostic logging added under the ‘calendar’ category in Settings → Debug → View debug log so you can see exactly what was scanned and matched.",
+                "Welcome card actually finds your gym class now. Title match loosened to a case-insensitive substring on the configured keyword, search window widened from 7 to 14 days, and full diagnostic logging added under the ‘calendar’ category in Settings → Debug → View debug log so you can see exactly what was scanned and matched.",
                 "Calendar permission re-checks every time the app foregrounds, so granting access in Settings → Privacy → Calendars after an initial deny picks up immediately without a relaunch."
             ]
         ),
@@ -43,7 +68,7 @@ enum Changelog {
             version: "0.7.0",
             date: dateFrom("2026-04-22"),
             highlights: [
-                "Home gets a real welcome card: time-of-day greeting (‘Good morning, Abhay’), a daily-rotating motivational tagline, and — when Apple Calendar has one on the books — the next ‘FNS Gym Class’ event with a relative countdown (‘UPCOMING · 2h 15m’ or ‘TOMORROW 6:15 AM’) plus the gym address. The redundant gear icon and large-title bar are gone; Settings still lives as its own tab.",
+                "Home gets a real welcome card: time-of-day greeting, a daily-rotating motivational tagline, and — when Apple Calendar has one on the books — the next gym class event with a relative countdown (‘UPCOMING · 2h 15m’ or ‘TOMORROW 6:15 AM’) plus the gym address. The redundant gear icon and large-title bar are gone; Settings still lives as its own tab.",
                 "Today’s highlights card now respects the four-station class structure — main lift hero plus at most three mini rows labelled STN 2 / STN 3 / STN 4. No more STN 5–STN 8 from accessory exercises bleeding into the row count.",
                 "Progress and Body tabs lost the dead 16pt of vertical padding above the first card — content now sits where the large title visually expects it instead of floating mid-screen."
             ]
@@ -109,7 +134,7 @@ enum Changelog {
                 "InBody import preview now has an info button on every metric (Weight, BMI, BF%, SMM, ECW/TBW, segmental, …) and a keyboard toolbar with ← → Done so you can step through all 23 fields without dismissing.",
                 "Calendar tap goes straight to the session — single-session days skip the picker; Watch-only days drill in directly.",
                 "Past-session view: replaced the multi-ring with an Apple Fitness-style scrubbable HR trace (drag to read bpm/time at any point) and shows TIME / KCAL / VOLUME in raw units instead of percent.",
-                "Body tab gets a prominent in-content header; Settings → About now credits Abhay Gulati as the creator.",
+                "Body tab gets a prominent in-content header; Settings → About section added.",
                 "App icon: lime → teal gradient with a dumbbell glyph, replacing the white default."
             ]
         ),

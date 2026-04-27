@@ -21,6 +21,8 @@ struct InBodyProgressView: View {
     @State private var range: ProgressAggregator.TimeRange = .sixMonth
     @State private var hoveredEntry: InBodyEntry?
     @State private var sheetEntry: InBodyEntry?
+    @State private var isSettingGoal = false
+    @State private var goalText = ""
 
     init(initialMetric: InBodyMetric = .weight) {
         self._metric = State(initialValue: initialMetric)
@@ -179,6 +181,17 @@ struct InBodyProgressView: View {
                 Text(metric.displayName)
                     .font(Theme.Fonts.header(14))
                     .foregroundStyle(Theme.Colors.textSecondary)
+
+                Button {
+                    goalText = savedGoal(for: metric).map { String(format: "%.1f", $0) } ?? ""
+                    isSettingGoal.toggle()
+                } label: {
+                    Image(systemName: savedGoal(for: metric) != nil ? "target" : "scope")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(savedGoal(for: metric) != nil ? Theme.Colors.orange : Theme.Colors.textTertiary)
+                }
+                .buttonStyle(.plain)
+
                 Spacer()
                 if !pointsInRange.isEmpty {
                     Text("Drag to scrub")
@@ -189,6 +202,10 @@ struct InBodyProgressView: View {
                         .font(Theme.Fonts.mono(11))
                         .foregroundStyle(Theme.Colors.textTertiary)
                 }
+            }
+
+            if isSettingGoal {
+                goalEntryRow
             }
 
             if pointsInRange.isEmpty {
@@ -206,6 +223,41 @@ struct InBodyProgressView: View {
             RoundedRectangle(cornerRadius: Theme.Radius.md)
                 .stroke(Theme.Colors.border, lineWidth: 1)
         )
+    }
+
+    private var goalEntryRow: some View {
+        HStack(spacing: Theme.Spacing.sm) {
+            TextField("Target value", text: $goalText)
+                .keyboardType(.decimalPad)
+                .textFieldStyle(.plain)
+                .font(Theme.Fonts.mono(13))
+                .foregroundStyle(Theme.Colors.textPrimary)
+                .padding(.horizontal, Theme.Spacing.sm)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Theme.Colors.background.opacity(0.5))
+                )
+            if !metric.unitSuffix.isEmpty {
+                Text(metric.unitSuffix)
+                    .font(Theme.Fonts.mono(11))
+                    .foregroundStyle(Theme.Colors.textTertiary)
+            }
+            Button("Set") {
+                if let v = Double(goalText), v > 0 {
+                    UserDefaults.standard.set(v, forKey: goalKey(for: metric))
+                }
+                isSettingGoal = false
+            }
+            .font(Theme.Fonts.header(13))
+            .foregroundStyle(Theme.Colors.accent)
+            Button("Clear") {
+                UserDefaults.standard.removeObject(forKey: goalKey(for: metric))
+                isSettingGoal = false
+            }
+            .font(Theme.Fonts.mono(11))
+            .foregroundStyle(Theme.Colors.textTertiary)
+        }
     }
 
     private var emptyChart: some View {
@@ -242,6 +294,16 @@ struct InBodyProgressView: View {
                 .foregroundStyle(Theme.Colors.accent)
                 .symbolSize(40)
             }
+            if let goal = savedGoal(for: metric) {
+                RuleMark(y: .value("Goal", goal))
+                    .foregroundStyle(Theme.Colors.orange.opacity(0.6))
+                    .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                    .annotation(position: .top, alignment: .trailing) {
+                        Text("Goal \(goalLabel(goal))")
+                            .font(Theme.Fonts.mono(9))
+                            .foregroundStyle(Theme.Colors.orange)
+                    }
+            }
             if let h = hoveredEntry, let d = h.date {
                 RuleMark(x: .value("scrub", d))
                     .foregroundStyle(Theme.Colors.textTertiary.opacity(0.7))
@@ -253,7 +315,11 @@ struct InBodyProgressView: View {
                 .symbolSize(120)
             }
         }
-        .chartYScale(domain: ChartDomain.padded(values: pointsInRange.map { metric.value(from: $0) }))
+        .chartYScale(domain: ChartDomain.padded(values: {
+            var vals = pointsInRange.map { metric.value(from: $0) }
+            if let goal = savedGoal(for: metric) { vals.append(goal) }
+            return vals
+        }()))
         .chartXAxis {
             AxisMarks(values: .automatic(desiredCount: 4)) { _ in
                 AxisValueLabel(format: xAxisFormat)
@@ -393,6 +459,21 @@ struct InBodyProgressView: View {
             RoundedRectangle(cornerRadius: Theme.Radius.sm)
                 .fill(Theme.Colors.surface)
         )
+    }
+
+    // MARK: - Goals
+
+    private func goalKey(for metric: InBodyMetric) -> String { "inbody.goal.\(metric.rawValue)" }
+
+    private func savedGoal(for metric: InBodyMetric) -> Double? {
+        let v = UserDefaults.standard.double(forKey: goalKey(for: metric))
+        return v > 0 ? v : nil
+    }
+
+    private func goalLabel(_ v: Double) -> String {
+        v.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0f", v)
+            : String(format: "%.1f", v)
     }
 
     private func format(_ v: Double) -> String {

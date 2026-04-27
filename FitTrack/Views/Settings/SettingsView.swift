@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreData
+import UniformTypeIdentifiers
 
 /// Settings screen pushed from the gear button on `WorkoutView`. Replaces the
 /// previous `confirmationDialog` so we can group destructive actions, surface
@@ -11,6 +12,11 @@ struct SettingsView: View {
     @State private var pendingClear: ClearAction?
     @State private var showDebugLog = false
     @State private var factoryConfirmStep: FactoryStep = .idle
+    @State private var importerOpen = false
+    @State private var importResult: String?
+    @State private var backupURL: URL?
+    @State private var userName: String = UserDefaults.standard.string(forKey: "user.displayName") ?? ""
+    @State private var calendarKeyword: String = CalendarService.titleKeyword
 
     enum FactoryStep {
         case idle, first, second
@@ -58,6 +64,8 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            preferencesSection
+            backupSection
             scheduleSection
             sessionsSection
             inBodySection
@@ -117,12 +125,104 @@ struct SettingsView: View {
         .sheet(isPresented: $showDebugLog) {
             DebugLogSheet()
         }
+        .fileImporter(isPresented: $importerOpen, allowedContentTypes: [.json]) { result in
+            switch result {
+            case .success(let url):
+                let needsScope = url.startAccessingSecurityScopedResource()
+                defer { if needsScope { url.stopAccessingSecurityScopedResource() } }
+                do {
+                    let data = try Data(contentsOf: url)
+                    let counts = try BackupService.importJSON(data: data, context: context)
+                    importResult = "Imported \(counts.sessions) sessions, \(counts.sets) sets, \(counts.inBody) InBody scans."
+                    AppLogger.shared.log("Backup import OK: \(importResult ?? "")", category: "backup")
+                } catch {
+                    importResult = "Import failed: \(error.localizedDescription)"
+                    AppLogger.shared.log("Backup import FAILED: \(error)", category: "backup")
+                }
+            case .failure(let error):
+                importResult = "Could not open file: \(error.localizedDescription)"
+            }
+        }
+        .alert("Backup Import", isPresented: Binding(get: { importResult != nil }, set: { if !$0 { importResult = nil } })) {
+            Button("OK") { importResult = nil }
+        } message: {
+            Text(importResult ?? "")
+        }
+        .sheet(item: $backupURL) { url in
+            BackupShareSheet(url: url)
+        }
         .onAppear {
             AppLogger.shared.log("SettingsView appeared", category: "ui")
         }
     }
 
     // MARK: - Sections
+
+    private var preferencesSection: some View {
+        Section("Preferences") {
+            HStack {
+                Label("Your Name", systemImage: "person")
+                    .foregroundStyle(Theme.Colors.textPrimary)
+                Spacer()
+                TextField("Optional", text: $userName)
+                    .multilineTextAlignment(.trailing)
+                    .font(Theme.Fonts.mono(13))
+                    .foregroundStyle(Theme.Colors.accent)
+                    .frame(maxWidth: 140)
+                    .onChange(of: userName) { _, new in
+                        UserDefaults.standard.set(new, forKey: "user.displayName")
+                    }
+            }
+            HStack {
+                Label("Class Keyword", systemImage: "magnifyingglass")
+                    .foregroundStyle(Theme.Colors.textPrimary)
+                Spacer()
+                TextField("e.g. CrossFit", text: $calendarKeyword)
+                    .multilineTextAlignment(.trailing)
+                    .font(Theme.Fonts.mono(13))
+                    .foregroundStyle(Theme.Colors.accent)
+                    .frame(maxWidth: 140)
+                    .onChange(of: calendarKeyword) { _, new in
+                        CalendarService.titleKeyword = new
+                    }
+            }
+        }
+    }
+
+    private var backupSection: some View {
+        Section("Backup") {
+            Button {
+                AppLogger.shared.log("Settings → Export backup tapped", category: "backup")
+                do {
+                    let data = try BackupService.exportJSON(context: context)
+                    let url = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("FitTrack-Backup-\(dateStamp).json")
+                    try data.write(to: url, options: .atomic)
+                    backupURL = url
+                } catch {
+                    AppLogger.shared.log("Export FAILED: \(error)", category: "backup")
+                    importResult = "Export failed: \(error.localizedDescription)"
+                }
+            } label: {
+                Label("Export Backup", systemImage: "square.and.arrow.up")
+                    .foregroundStyle(Theme.Colors.accent)
+            }
+
+            Button {
+                AppLogger.shared.log("Settings → Import backup tapped", category: "backup")
+                importerOpen = true
+            } label: {
+                Label("Import Backup", systemImage: "square.and.arrow.down")
+                    .foregroundStyle(Theme.Colors.textPrimary)
+            }
+        }
+    }
+
+    private var dateStamp: String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: Date())
+    }
 
     private var scheduleSection: some View {
         Section("Schedule") {
@@ -204,13 +304,17 @@ struct SettingsView: View {
                 Label("Changelog", systemImage: "list.bullet.clipboard")
                     .foregroundStyle(Theme.Colors.textPrimary)
             }
-            HStack {
-                Label("Created by", systemImage: "person.fill")
-                    .foregroundStyle(Theme.Colors.textPrimary)
-                Spacer()
-                Text("Abhay Gulati")
-                    .font(Theme.Fonts.mono(12))
-                    .foregroundStyle(Theme.Colors.accent)
+            if let url = URL(string: "https://abhaygulati.com/fittrack/privacy") {
+                Link(destination: url) {
+                    Label("Privacy Policy", systemImage: "hand.raised")
+                        .foregroundStyle(Theme.Colors.textPrimary)
+                }
+            }
+            if let url = URL(string: "mailto:fittrack@abhaygulati.com") {
+                Link(destination: url) {
+                    Label("Contact Support", systemImage: "envelope")
+                        .foregroundStyle(Theme.Colors.textPrimary)
+                }
             }
         }
     }
@@ -436,4 +540,20 @@ struct DebugLogSheet: View {
         }
         .preferredColorScheme(.dark)
     }
+}
+
+// MARK: - Backup share sheet
+
+private struct BackupShareSheet: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+extension URL: @retroactive Identifiable {
+    public var id: String { absoluteString }
 }
