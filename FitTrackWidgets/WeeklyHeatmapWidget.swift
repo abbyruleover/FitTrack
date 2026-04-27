@@ -54,19 +54,16 @@ struct HeatmapProvider: TimelineProvider {
 
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
-        let weekday = cal.component(.weekday, from: today)
-        let sundayOffset = -(weekday - cal.firstWeekday)
-        let weekStart = cal.date(byAdding: .day, value: sundayOffset < 0 ? sundayOffset + 7 : sundayOffset, to: today)
-            .map { cal.startOfDay(for: $0) } ?? today
-
+        let weekday = cal.component(.weekday, from: today) // 1=Sun
         let symbols = cal.veryShortStandaloneWeekdaySymbols
+
         var days: [HeatmapEntry.DayStatus] = []
         for i in 0..<7 {
-            let d = cal.date(byAdding: .day, value: i - (7 - sundayOffset.magnitude.hashValue), to: today) ?? today
+            // i=0 is Sunday. Offset from today to get each day of this week.
+            let offset = i - (weekday - 1)
+            let d = cal.date(byAdding: .day, value: offset, to: today)!
             let dayStart = cal.startOfDay(for: d)
-            let actualDay = cal.date(byAdding: .day, value: i, to: cal.date(byAdding: .day, value: -(weekday - 1), to: today)!) ?? today
-            let actualDayStart = cal.startOfDay(for: actualDay)
-            days.append(.init(id: i, label: symbols[i], hasWorkout: allDays.contains(actualDayStart)))
+            days.append(.init(id: i, label: symbols[i], hasWorkout: allDays.contains(dayStart)))
         }
 
         let now = Date()
@@ -99,31 +96,44 @@ struct HeatmapWidgetView: View {
     }
 
     private var smallView: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             Text("THIS WEEK")
-                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .font(.system(size: 9, weight: .semibold, design: .monospaced))
                 .foregroundStyle(.gray)
 
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 ForEach(entry.weekDays) { day in
-                    VStack(spacing: 3) {
+                    VStack(spacing: 2) {
                         Text(day.label)
-                            .font(.system(size: 9, weight: .medium, design: .monospaced))
+                            .font(.system(size: 8, weight: .medium, design: .monospaced))
                             .foregroundStyle(.gray)
                         Circle()
                             .fill(day.hasWorkout ? Color(red: 0.78, green: 1.0, blue: 0.0) : Color.gray.opacity(0.25))
-                            .frame(width: 14, height: 14)
+                            .frame(width: 12, height: 12)
                     }
                 }
             }
 
-            HStack(spacing: 4) {
-                Text("\(entry.monthCount)")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(red: 0.78, green: 1.0, blue: 0.0))
-                Text("this month")
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.gray)
+            HStack(spacing: 16) {
+                VStack(spacing: 1) {
+                    Text("\(entry.monthCount)")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color(red: 0.78, green: 1.0, blue: 0.0))
+                    Text("this month")
+                        .font(.system(size: 8, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.gray)
+                }
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 1, height: 28)
+                VStack(spacing: 1) {
+                    Text("\(entry.ytdCount)")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color(red: 0.78, green: 1.0, blue: 0.0))
+                    Text("this year")
+                        .font(.system(size: 8, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.gray)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
