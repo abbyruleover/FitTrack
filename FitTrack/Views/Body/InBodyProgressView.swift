@@ -30,49 +30,77 @@ struct InBodyProgressView: View {
     /// time. Order matters — Weight is the default and most-used view.
     enum InBodyMetric: String, CaseIterable, Hashable {
         case weight, bodyFat, smm, lbm, bmi, bmr, ecwTbw, visceral
+        case bodyFatMass, dryLeanMass, icw, ecw, tbw
+        case rightArm, leftArm, trunk, rightLeg, leftLeg
 
         var displayName: String {
             switch self {
-            case .weight:   return "Weight"
-            case .bodyFat:  return "Body Fat %"
-            case .smm:      return "SMM"
-            case .lbm:      return "Lean Mass"
-            case .bmi:      return "BMI"
-            case .bmr:      return "BMR"
-            case .ecwTbw:   return "ECW/TBW"
-            case .visceral: return "Visceral"
+            case .weight:      return "Weight"
+            case .bodyFat:     return "Body Fat %"
+            case .smm:         return "SMM"
+            case .lbm:         return "Lean Mass"
+            case .bmi:         return "BMI"
+            case .bmr:         return "BMR"
+            case .ecwTbw:      return "ECW/TBW"
+            case .visceral:    return "Visceral"
+            case .bodyFatMass: return "Fat Mass"
+            case .dryLeanMass: return "Dry Lean"
+            case .icw:         return "ICW"
+            case .ecw:         return "ECW"
+            case .tbw:         return "TBW"
+            case .rightArm:    return "R Arm"
+            case .leftArm:     return "L Arm"
+            case .trunk:       return "Trunk"
+            case .rightLeg:    return "R Leg"
+            case .leftLeg:     return "L Leg"
             }
         }
 
         var unitSuffix: String {
             switch self {
-            case .weight, .smm, .lbm: return "lbs"
-            case .bodyFat:            return "%"
-            case .bmi, .ecwTbw, .visceral: return ""
-            case .bmr:                return "kcal"
+            case .weight, .smm, .lbm, .bodyFatMass, .dryLeanMass,
+                 .icw, .ecw, .tbw,
+                 .rightArm, .leftArm, .trunk, .rightLeg, .leftLeg:
+                return "lbs"
+            case .bodyFat:
+                return "%"
+            case .bmi, .ecwTbw, .visceral:
+                return ""
+            case .bmr:
+                return "kcal"
             }
         }
 
         func value(from entry: InBodyEntry) -> Double {
             switch self {
-            case .weight:   return entry.weightLbs
-            case .bodyFat:  return entry.bodyFatPercentage
-            case .smm:      return entry.skeletalMuscleMassLbs
-            case .lbm:      return entry.leanBodyMassLbs
-            case .bmi:      return entry.bmi
-            case .bmr:      return entry.basalMetabolicRateKcal
-            case .ecwTbw:   return entry.ecwTbwRatio
-            case .visceral: return Double(entry.visceralFatLevel)
+            case .weight:      return entry.weightLbs
+            case .bodyFat:     return entry.bodyFatPercentage
+            case .smm:         return entry.skeletalMuscleMassLbs
+            case .lbm:         return entry.leanBodyMassLbs
+            case .bmi:         return entry.bmi
+            case .bmr:         return entry.basalMetabolicRateKcal
+            case .ecwTbw:      return entry.ecwTbwRatio
+            case .visceral:    return Double(entry.visceralFatLevel)
+            case .bodyFatMass: return entry.bodyFatMassLbs
+            case .dryLeanMass: return entry.dryLeanMassLbs
+            case .icw:         return entry.intracellularWaterLbs
+            case .ecw:         return entry.extracellularWaterLbs
+            case .tbw:         return entry.totalBodyWaterLbs
+            case .rightArm:    return entry.rightArmLeanLbs
+            case .leftArm:     return entry.leftArmLeanLbs
+            case .trunk:       return entry.trunkLeanLbs
+            case .rightLeg:    return entry.rightLegLeanLbs
+            case .leftLeg:     return entry.leftLegLeanLbs
             }
         }
 
         /// Whether a *lower* reading is the better outcome for this metric.
-        /// Body fat %, ECW/TBW (inflammation marker), and visceral fat all
-        /// invert the usual "max is best" assumption used by the stats strip.
+        /// Body fat %, ECW/TBW (inflammation marker), visceral fat, and fat
+        /// mass all invert the usual "max is best" assumption for the stats strip.
         var lowerIsBetter: Bool {
             switch self {
-            case .bodyFat, .ecwTbw, .visceral: return true
-            default:                            return false
+            case .bodyFat, .ecwTbw, .visceral, .bodyFatMass: return true
+            default: return false
             }
         }
     }

@@ -156,11 +156,10 @@ final class ActiveSessionService: ObservableObject {
             return
         }
         let finalState = activity.content.state
-        let policy: ActivityUIDismissalPolicy = (reason == .discarded) ? .immediate : .after(.now + 30)
         Task { [activity] in
             await activity.end(
                 ActivityContent(state: finalState, staleDate: nil),
-                dismissalPolicy: policy
+                dismissalPolicy: .immediate
             )
             AppLogger.shared.log("Live Activity ended (reason=\(reason))", category: "session")
         }
@@ -169,17 +168,30 @@ final class ActiveSessionService: ObservableObject {
         draftsSubscription = nil
     }
 
-    /// Snapshot the store into the ActivityKit ContentState shape. The
-    /// "current set" is the first not-yet-checked set for the most-recently
-    /// touched exercise (or the very last set when everything is done).
+    /// Snapshot the store into the ActivityKit ContentState shape.
+    ///
+    /// Set-counter math:
+    ///  - `currentSetIndex` is the 1-based index of the next ✓-able set for
+    ///    the current exercise (or `totalSets` once everything is checked).
+    ///  - `totalSetsForExercise` reflects the live draft count, never `1` as
+    ///    a magic default — that produced "Set 1 of 1" while the workout was
+    ///    sitting idle and made the Live Activity look broken.
     private func makeContentState(from store: SessionStore) -> WorkoutActivityAttributes.ContentState {
         let exName = store.currentExerciseName
         let exDrafts = store.drafts[exName] ?? []
-        let totalSets = max(exDrafts.count, 1)
-        let currentIdx = exDrafts.first(where: { !$0.isCompleted })?.setIndex ?? totalSets
+        let totalSets = exDrafts.count
+        let currentIdx: Int
+        if let firstOpen = exDrafts.first(where: { !$0.isCompleted }) {
+            currentIdx = firstOpen.setIndex
+        } else if !exDrafts.isEmpty {
+            currentIdx = totalSets // all drafts done
+        } else {
+            currentIdx = 1 // user hasn't opened the exercise yet
+        }
         return WorkoutActivityAttributes.ContentState(
             startedAt: store.session.startedAt ?? Date(),
             currentExerciseName: exName,
+            currentExerciseSection: store.currentExerciseSection,
             currentSetIndex: currentIdx,
             totalSetsForExercise: totalSets,
             lastSetSummary: store.lastCompletedSetSummary(),

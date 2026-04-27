@@ -25,7 +25,6 @@ struct BodyView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                    bodyHeader
                     if let latest = inBodyEntries.last {
                         latestScanCard(latest)
                         if inBodyEntries.count >= 2 {
@@ -42,12 +41,12 @@ struct BodyView: View {
                     actionButtons
                 }
                 .padding(.horizontal, Theme.Spacing.md)
-                .padding(.vertical, Theme.Spacing.md)
+                .padding(.bottom, Theme.Spacing.md)
             }
             .scrollContentBackground(.hidden)
             .background(Theme.Colors.background)
             .navigationTitle(AppStrings.Tabs.body)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(Theme.Colors.background, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .navigationDestination(for: InBodyTrendsRoute.self) { route in
@@ -62,22 +61,6 @@ struct BodyView: View {
             .onAppear {
                 AppLogger.shared.log("BodyView appeared (\(inBodyEntries.count) scans)", category: "ui")
             }
-        }
-    }
-
-    // MARK: - Header
-
-    /// Big in-content title above the scan card. Nav-bar mode is set to
-    /// `.inline` so we don't double-stack a giant "Body" both in the bar and
-    /// inside the scroll. The subtitle hints at what the tab covers.
-    private var bodyHeader: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("Body")
-                .font(Theme.Fonts.header(28))
-                .foregroundStyle(Theme.Colors.textPrimary)
-            Text("Composition + scan trends")
-                .font(Theme.Fonts.mono(11))
-                .foregroundStyle(Theme.Colors.textTertiary)
         }
     }
 
@@ -169,7 +152,7 @@ struct BodyView: View {
                             .foregroundStyle(color)
                     }
                 }
-                Chart(entries, id: \.objectID) { entry in
+                Chart(entries.filter { metric.value(from: $0) > 0 }, id: \.objectID) { entry in
                     LineMark(
                         x: .value("Date", entry.date ?? Date()),
                         y: .value(metric.displayName, metric.value(from: entry))

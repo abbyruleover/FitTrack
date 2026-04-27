@@ -69,7 +69,7 @@ struct SettingsView: View {
         .scrollContentBackground(.hidden)
         .background(Theme.Colors.background.ignoresSafeArea())
         .navigationTitle("Settings")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .toolbarBackground(Theme.Colors.background, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .alert(item: $pendingClear) { action in

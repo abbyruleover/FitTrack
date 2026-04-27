@@ -9,20 +9,43 @@ import SwiftUI
 /// regardless of which tab is foreground.
 struct MinimizedSessionPill: View {
     @ObservedObject var service = ActiveSessionService.shared
+    @State private var confirmingDiscard = false
 
     var body: some View {
         if let store = service.current, !service.isPresentingSession {
-            pill(store: store)
+            PillContent(store: store, onResume: { service.resume() }, onTrash: { confirmingDiscard = true })
                 .padding(.horizontal, Theme.Spacing.md)
                 .padding(.bottom, 6)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
+                .confirmationDialog(
+                    "Discard this workout?",
+                    isPresented: $confirmingDiscard,
+                    titleVisibility: .visible
+                ) {
+                    Button("Discard Workout", role: .destructive) {
+                        AppLogger.shared.log("Mini-pill trash confirmed → discarding session", category: "ui")
+                        service.discard()
+                    }
+                    Button("Keep Recording", role: .cancel) { }
+                } message: {
+                    Text("Any sets you've already logged will be removed. This can't be undone.")
+                }
         }
     }
+}
 
-    private func pill(store: SessionStore) -> some View {
+/// Separated so SwiftUI directly observes the `SessionStore` and re-renders
+/// every second when `elapsed` ticks — the parent only observes
+/// `ActiveSessionService`, whose publishers don't fire on timer ticks.
+private struct PillContent: View {
+    @ObservedObject var store: SessionStore
+    let onResume: () -> Void
+    let onTrash: () -> Void
+
+    var body: some View {
         Button {
             AppLogger.shared.log("Mini-pill tapped → resuming session", category: "ui")
-            service.resume()
+            onResume()
         } label: {
             HStack(spacing: Theme.Spacing.sm) {
                 Image(systemName: "figure.strengthtraining.traditional")
@@ -41,17 +64,27 @@ struct MinimizedSessionPill: View {
                             .monospacedDigit()
                             .foregroundStyle(Theme.Colors.accent)
                     }
-                    Text(store.currentExerciseName)
-                        .font(Theme.Fonts.mono(10))
-                        .foregroundStyle(Theme.Colors.textTertiary)
-                        .lineLimit(1)
+                    HStack(spacing: 4) {
+                        if let section = store.currentExerciseSection {
+                            Text(section.uppercased())
+                                .font(Theme.Fonts.mono(9))
+                                .foregroundStyle(Theme.Colors.accent.opacity(0.85))
+                            Text("·")
+                                .font(Theme.Fonts.mono(9))
+                                .foregroundStyle(Theme.Colors.textTertiary)
+                        }
+                        Text(store.currentExerciseName)
+                            .font(Theme.Fonts.mono(10))
+                            .foregroundStyle(Theme.Colors.textTertiary)
+                            .lineLimit(1)
+                    }
                 }
 
                 Spacer(minLength: 0)
 
                 Button {
-                    AppLogger.shared.log("Mini-pill trash tapped → discarding session", category: "ui")
-                    service.discard()
+                    AppLogger.shared.log("Mini-pill trash tapped → asking to confirm discard", category: "ui")
+                    onTrash()
                 } label: {
                     Image(systemName: "trash.fill")
                         .font(.system(size: 14, weight: .semibold))

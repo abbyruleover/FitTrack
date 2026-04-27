@@ -39,18 +39,21 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selection) {
             WorkoutView()
+                .withMinimizedSessionPill(service: sessionService)
                 .tag(AppTab.home)
                 .tabItem {
                     Label(AppStrings.Tabs.home, systemImage: "house.fill")
                 }
 
             ProgressView()
+                .withMinimizedSessionPill(service: sessionService)
                 .tag(AppTab.progress)
                 .tabItem {
                     Label(AppStrings.Tabs.progress, systemImage: "chart.line.uptrend.xyaxis")
                 }
 
             BodyView()
+                .withMinimizedSessionPill(service: sessionService)
                 .tag(AppTab.body)
                 .tabItem {
                     Label(AppStrings.Tabs.body, systemImage: "figure.arms.open")
@@ -59,19 +62,13 @@ struct ContentView: View {
             NavigationStack {
                 SettingsView()
             }
+            .withMinimizedSessionPill(service: sessionService)
             .tag(AppTab.settings)
             .tabItem {
                 Label(AppStrings.Tabs.settings, systemImage: "gearshape.fill")
             }
         }
         .tint(Theme.Colors.accent)
-        .safeAreaInset(edge: .bottom) {
-            // Sits above the tab bar when minimized; collapses entirely
-            // when no session is active or the cover is up.
-            MinimizedSessionPill(service: sessionService)
-                .animation(.easeInOut(duration: 0.2), value: sessionService.current != nil)
-                .animation(.easeInOut(duration: 0.2), value: sessionService.isPresentingSession)
-        }
         .fullScreenCover(isPresented: $sessionService.isPresentingSession) {
             // Pull the workout shape from the live session — the store holds
             // the parsed sections so the view can re-render after minimize.
@@ -81,6 +78,33 @@ struct ContentView: View {
                     .preferredColorScheme(.dark)
             }
         }
+    }
+}
+
+/// Inserts the `MinimizedSessionPill` into the tab's own safe area so it
+/// sits *above* the tab bar instead of being painted on top of it.
+///
+/// Why per-tab instead of once on the TabView:
+/// `safeAreaInset(.bottom)` on a TabView in iOS 17 places its inset content
+/// inside the tab-bar zone — the inset visually overlaps the tab labels (we
+/// shipped that bug in v0.6.5). Applying the inset to each tab's content
+/// view instead anchors the pill above the tab bar, mirroring how Apple
+/// Music/Podcasts position the now-playing bar.
+private struct MinimizedSessionPillModifier: ViewModifier {
+    @ObservedObject var service: ActiveSessionService
+
+    func body(content: Content) -> some View {
+        content.safeAreaInset(edge: .bottom, spacing: 0) {
+            MinimizedSessionPill(service: service)
+                .animation(.easeInOut(duration: 0.2), value: service.current != nil)
+                .animation(.easeInOut(duration: 0.2), value: service.isPresentingSession)
+        }
+    }
+}
+
+extension View {
+    fileprivate func withMinimizedSessionPill(service: ActiveSessionService) -> some View {
+        modifier(MinimizedSessionPillModifier(service: service))
     }
 }
 

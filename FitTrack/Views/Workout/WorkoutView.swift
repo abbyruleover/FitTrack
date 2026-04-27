@@ -2,6 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import CoreData
 import HealthKit
+import EventKit
 
 /// Phase 5 home dashboard. Activity rings card at the top (taps into the
 /// Health app), then a "This Week" horizontal carousel of scheduled
@@ -24,6 +25,8 @@ struct WorkoutView: View {
     @State private var importProgress: ImportProgress?
     @State private var bannerDismissed = false
     @State private var todaysHIIT: HKWorkout?
+    @State private var nextCalendarClass: EKEvent?
+    @Environment(\.scenePhase) private var scenePhase
     @ObservedObject private var logger = AppLogger.shared
 
     /// Live state for the import overlay. The on-device LLM takes ~10s per
@@ -43,7 +46,7 @@ struct WorkoutView: View {
         NavigationStack {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                    headerRow
+                    welcomeCard
 
                     if shouldShowBanner { reminderBanner }
 
@@ -64,6 +67,8 @@ struct WorkoutView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Theme.Colors.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .navigationDestination(for: WorkoutDay.self) { day in
                 WorkoutDetailView(workout: ParsedWorkout(from: day), workoutDay: day)
                     .onAppear {
@@ -81,9 +86,6 @@ struct WorkoutView: View {
                 Button("OK") { importError = nil }
             } message: {
                 Text(importError ?? "")
-            }
-            .navigationDestination(for: SettingsRoute.self) { _ in
-                SettingsView()
             }
             .navigationDestination(for: UnifiedSessionRoute.self) { route in
                 if let session = try? context.existingObject(with: route.sessionID) as? WorkoutSession {
@@ -105,13 +107,19 @@ struct WorkoutView: View {
                     todaysHIIT = await HealthKitService.shared.todaysHIITWorkout()
                 }
             }
+            .task {
+                await CalendarService.shared.requestAuthorizationIfNeeded()
+                nextCalendarClass = await CalendarService.shared.nextFNSClass()
+            }
+            .onChange(of: scenePhase) { _, phase in
+                guard phase == .active else { return }
+                Task {
+                    await CalendarService.shared.requestAuthorizationIfNeeded()
+                    nextCalendarClass = await CalendarService.shared.nextFNSClass()
+                }
+            }
         }
     }
-
-    /// Sentinel value used purely to drive the `.navigationDestination` for
-    /// the gear → Settings push. Keeps the destination registration alongside
-    /// the `WorkoutDay` one instead of inlining a `NavigationLink { … }`.
-    private struct SettingsRoute: Hashable {}
 
     /// Route value for the unified Watch+FitTrack session screen. Carries the
     /// session's `NSManagedObjectID` so the destination resolver can refault
@@ -123,24 +131,139 @@ struct WorkoutView: View {
 
     // MARK: - Header
 
-    private var headerRow: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(AppStrings.Tabs.home)
-                .font(Theme.Fonts.header(34))
-                .foregroundStyle(Theme.Colors.textPrimary)
-            Spacer()
-            NavigationLink(value: SettingsRoute()) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 22, weight: .regular))
+    // MARK: - Welcome card
+
+    /// Custom replacement for the iOS large-title bar on Home. Single page of
+    /// content doesn't need the collapse-on-scroll behavior, so we trade the
+    /// system title for a card that does real work: time-of-day greeting,
+    /// daily-rotating motivational tagline, and (when present) the next FNS
+    /// gym class pulled from Apple Calendar so the user can see when to be
+    /// there without opening Calendar.
+    private var welcomeCard: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Good \(timeOfDay), Abhay")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundStyle(Theme.Colors.textPrimary)
+                Text(dailyTagline)
+                    .font(Theme.Fonts.body(13))
                     .foregroundStyle(Theme.Colors.textSecondary)
             }
-            .buttonStyle(.plain)
-            .disabled(importProgress != nil)
-            .opacity(importProgress != nil ? 0.4 : 1.0)
-            .simultaneousGesture(TapGesture().onEnded {
-                AppLogger.shared.log("gear button tapped → pushing SettingsView", category: "ui")
-            })
+
+            if let event = nextCalendarClass {
+                Divider()
+                    .overlay(Theme.Colors.border)
+                    .padding(.vertical, 2)
+                upcomingClassBlock(event: event)
+            }
         }
+        .padding(Theme.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.Radius.md)
+                .fill(Theme.Colors.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.md)
+                .stroke(Theme.Colors.accent.opacity(0.4), lineWidth: 1)
+        )
+    }
+
+    private func upcomingClassBlock(event: EKEvent) -> some View {
+        HStack(alignment: .top, spacing: Theme.Spacing.sm) {
+            Image(systemName: "alarm.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Theme.Colors.accent)
+                .padding(.top, 2)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("UPCOMING · \(relativeWhenLabel(for: event))")
+                    .font(Theme.Fonts.mono(10))
+                    .foregroundStyle(Theme.Colors.accent)
+                Text(event.title ?? "FNS Gym Class")
+                    .font(Theme.Fonts.header(15))
+                    .foregroundStyle(Theme.Colors.textPrimary)
+                    .lineLimit(1)
+                Text(eventSubtitle(for: event))
+                    .font(Theme.Fonts.mono(11))
+                    .foregroundStyle(Theme.Colors.textTertiary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var timeOfDay: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 0..<12:  return "morning"
+        case 12..<17: return "afternoon"
+        default:      return "evening"
+        }
+    }
+
+    private var dailyTagline: String {
+        let pool = AppStrings.motivationalTaglines
+        guard !pool.isEmpty else { return "" }
+        let day = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
+        return pool[(day - 1).quotientAndRemainder(dividingBy: pool.count).remainder]
+    }
+
+    /// Pure *relative* description for the upcoming event — never includes
+    /// the absolute clock time. The subtitle row carries that. Examples:
+    /// "STARTING NOW", "45m", "2h 15m", "TOMORROW", "FRI", "MAY 3".
+    private func relativeWhenLabel(for event: EKEvent) -> String {
+        guard let start = event.startDate else { return "" }
+        let cal = Calendar.current
+        let now = Date()
+        let interval = start.timeIntervalSince(now)
+
+        if cal.isDateInToday(start) {
+            if interval < 60 { return "STARTING NOW" }
+            if interval < 3600 {
+                let m = Int(interval / 60)
+                return "\(m)m"
+            }
+            let h = Int(interval / 3600)
+            let m = (Int(interval) % 3600) / 60
+            return m > 0 ? "\(h)h \(m)m" : "\(h)h"
+        }
+        if cal.isDateInTomorrow(start) {
+            return "TOMORROW"
+        }
+        // Same calendar week → weekday name; further out → "MMM d".
+        let daysOut = cal.dateComponents([.day], from: cal.startOfDay(for: now), to: cal.startOfDay(for: start)).day ?? 0
+        if daysOut < 7 {
+            let symbols = DateFormatter().shortWeekdaySymbols ?? []
+            let idx = cal.component(.weekday, from: start) - 1
+            if symbols.indices.contains(idx) {
+                return symbols[idx].uppercased()
+            }
+        }
+        let f = DateFormatter()
+        f.dateFormat = "MMM d"
+        return f.string(from: start).uppercased()
+    }
+
+    /// "6:15 AM · 2340 Walsh Ave" — start time plus a trimmed location. The
+    /// EK location string is often a full multi-line address; we keep just
+    /// the first comma-separated chunk so the row stays single-line.
+    private func eventSubtitle(for event: EKEvent) -> String {
+        var parts: [String] = []
+        if let start = event.startDate {
+            parts.append(timeLabel(for: start))
+        }
+        if let location = event.location, !location.trimmingCharacters(in: .whitespaces).isEmpty {
+            let trimmed = location.split(separator: ",").first.map { String($0).trimmingCharacters(in: .whitespaces) }
+                ?? location
+            parts.append(trimmed)
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    private func timeLabel(for date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f.string(from: date)
     }
 
     // MARK: - Banner
@@ -445,6 +568,7 @@ struct WorkoutView: View {
         let setCount = (session?.sets as? Set<LoggedSet>)?.filter { $0.isCompleted }.count ?? 0
         let kcal = hiit?.statistics(for: HKQuantityType(.activeEnergyBurned))?
             .sumQuantity()?.doubleValue(for: .kilocalorie())
+        let logged = session.map { loggedExercises(session: $0, day: day) } ?? []
 
         return VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             HStack(alignment: .firstTextBaseline) {
@@ -461,10 +585,19 @@ struct WorkoutView: View {
                 glyphHalo(glyph: mainGlyph, size: 56)
             }
 
-            if stations.count > 1 {
+            if !logged.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    ForEach(Array(stations.dropFirst().enumerated()), id: \.element.objectID) { offset, ex in
-                        stationRow(stationIndex: offset + 2, exercise: ex)
+                    Text("LOGGED")
+                        .font(Theme.Fonts.mono(9))
+                        .foregroundStyle(Theme.Colors.textTertiary)
+                    ForEach(logged) { row in
+                        loggedExerciseRow(row)
+                    }
+                }
+            } else if stations.count > 1 {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(stations.dropFirst()), id: \.objectID) { ex in
+                        stationRow(stationIndex: Int(ex.station), exercise: ex)
                     }
                 }
             }
@@ -506,6 +639,113 @@ struct WorkoutView: View {
                 .foregroundStyle(Theme.Colors.textPrimary)
                 .lineLimit(1)
             Spacer()
+        }
+    }
+
+    /// One entry per *unique* exercise the user has logged at least one
+    /// completed set for in the current session. Carries the station number
+    /// (1-4, or 0 for warm-up / prep / finisher) so the row can render the
+    /// STN N label that matches the planned card.
+    struct LoggedExerciseRow: Identifiable {
+        let id: String
+        let name: String
+        let station: Int
+        let count: Int
+    }
+
+    /// Joins the session's `LoggedSet`s back to the day's `Exercise` rows so
+    /// each logged exercise can render its station number. We prefer the
+    /// canonical ID match (stable across renames) and fall back to a
+    /// case-insensitive name match for legacy data that pre-dates the
+    /// canonical-ID column. Result is sorted by station, then by the order
+    /// the user actually started logging that exercise.
+    private func loggedExercises(session: WorkoutSession, day: WorkoutDay) -> [LoggedExerciseRow] {
+        guard let sets = session.sets as? Set<LoggedSet> else { return [] }
+        let completed = sets.filter { $0.isCompleted }
+        guard !completed.isEmpty else { return [] }
+
+        var stationByID: [UUID: Int] = [:]
+        var stationByName: [String: Int] = [:]
+        if let dayExercises = day.exercises as? Set<Exercise> {
+            for ex in dayExercises {
+                if let id = ex.canonicalExerciseID {
+                    stationByID[id] = Int(ex.station)
+                }
+                if let n = ex.name?.lowercased(), !n.isEmpty {
+                    stationByName[n] = Int(ex.station)
+                }
+            }
+        }
+
+        struct Group {
+            let key: String
+            var name: String
+            var station: Int
+            var count: Int
+            var firstAt: Date
+        }
+        var groups: [String: Group] = [:]
+        for set in completed {
+            let name = set.exerciseName ?? "—"
+            let key: String
+            if let id = set.canonicalExerciseID {
+                key = id.uuidString
+            } else {
+                key = name.lowercased()
+            }
+
+            let station: Int = {
+                if let id = set.canonicalExerciseID, let s = stationByID[id] { return s }
+                if let s = stationByName[name.lowercased()] { return s }
+                return 0
+            }()
+            let when = set.completedAt ?? .distantFuture
+
+            if var g = groups[key] {
+                g.count += 1
+                if when < g.firstAt { g.firstAt = when }
+                groups[key] = g
+            } else {
+                groups[key] = Group(key: key, name: name, station: station, count: 1, firstAt: when)
+            }
+        }
+
+        return groups.values
+            .sorted { lhs, rhs in
+                if lhs.station != rhs.station { return lhs.station < rhs.station }
+                return lhs.firstAt < rhs.firstAt
+            }
+            .map { LoggedExerciseRow(id: $0.key, name: $0.name, station: $0.station, count: $0.count) }
+    }
+
+    private func loggedExerciseRow(_ row: LoggedExerciseRow) -> some View {
+        let glyph = ExerciseIcon.glyph(for: row.name)
+        return HStack(spacing: Theme.Spacing.sm) {
+            ZStack {
+                Circle()
+                    .fill(Theme.Colors.green.opacity(0.18))
+                    .frame(width: 28, height: 28)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Theme.Colors.green)
+            }
+            Text(row.station > 0 ? "STN \(row.station)" : "—")
+                .font(Theme.Fonts.mono(10))
+                .foregroundStyle(Theme.Colors.textTertiary)
+                .frame(width: 42, alignment: .leading)
+            HStack(spacing: 6) {
+                Image(systemName: glyph.systemName)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(glyph.tint)
+                Text(row.name)
+                    .font(Theme.Fonts.body(13))
+                    .foregroundStyle(Theme.Colors.textPrimary)
+                    .lineLimit(1)
+            }
+            Spacer()
+            Text("\(row.count) set\(row.count == 1 ? "" : "s")")
+                .font(Theme.Fonts.mono(11))
+                .foregroundStyle(Theme.Colors.textSecondary)
         }
     }
 
@@ -551,14 +791,19 @@ struct WorkoutView: View {
         }
     }
 
+    /// Returns the *main* exercise for each of the four stations (1-4) in
+    /// order. "Main" = lowest `orderIndex` within the station — the lift the
+    /// station is built around (e.g. BB Squats for Station 1). Collapsing to
+    /// one row per station keeps the today's-highlights card honest: a real
+    /// FNS class only has four stations, even when each has 2-3 accessory
+    /// movements stacked under it.
     private func stationExercises(for day: WorkoutDay) -> [Exercise] {
         guard let set = day.exercises as? Set<Exercise> else { return [] }
-        return set
-            .filter { (1...4).contains($0.station) }
-            .sorted { lhs, rhs in
-                if lhs.station != rhs.station { return lhs.station < rhs.station }
-                return lhs.orderIndex < rhs.orderIndex
-            }
+        let byStation: [Int16: Exercise] = Dictionary(
+            grouping: set.filter { (1...4).contains($0.station) },
+            by: { $0.station }
+        ).compactMapValues { $0.min(by: { $0.orderIndex < $1.orderIndex }) }
+        return (1...4).compactMap { byStation[Int16($0)] }
     }
 
     private func dayOfWeekLabel(for date: Date) -> String {

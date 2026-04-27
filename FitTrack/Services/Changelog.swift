@@ -24,6 +24,39 @@ enum Changelog {
     /// Newest first. The first element is treated as the "current" release.
     static let entries: [Entry] = [
         Entry(
+            version: "0.7.2",
+            date: dateFrom("2026-04-22"),
+            highlights: [
+                "Welcome card no longer double-prints the class time. The UPCOMING line is now purely relative (‘TOMORROW’, ‘FRI’, ‘2h 15m’, ‘STARTING NOW’) and the absolute clock time stays on the address line below — so ‘UPCOMING · TOMORROW 6:15 AM / 6:15 AM · 2340 Walsh Ave’ is now ‘UPCOMING · TOMORROW / 6:15 AM · 2340 Walsh Ave’."
+            ]
+        ),
+        Entry(
+            version: "0.7.1",
+            date: dateFrom("2026-04-22"),
+            highlights: [
+                "Today’s highlights card now reflects the live session: once you’ve logged any sets, the planned station list flips to a LOGGED list — green ✓, station label (STN 1 / STN 2 / etc.), exercise name, and the set count for that exercise. Lookup is canonical-ID based so renamed exercises still match the planned station.",
+                "Welcome card actually finds your gym class now. Title match loosened to a case-insensitive substring on ‘FNS’, search window widened from 7 to 14 days, and full diagnostic logging added under the ‘calendar’ category in Settings → Debug → View debug log so you can see exactly what was scanned and matched.",
+                "Calendar permission re-checks every time the app foregrounds, so granting access in Settings → Privacy → Calendars after an initial deny picks up immediately without a relaunch."
+            ]
+        ),
+        Entry(
+            version: "0.7.0",
+            date: dateFrom("2026-04-22"),
+            highlights: [
+                "Home gets a real welcome card: time-of-day greeting (‘Good morning, Abhay’), a daily-rotating motivational tagline, and — when Apple Calendar has one on the books — the next ‘FNS Gym Class’ event with a relative countdown (‘UPCOMING · 2h 15m’ or ‘TOMORROW 6:15 AM’) plus the gym address. The redundant gear icon and large-title bar are gone; Settings still lives as its own tab.",
+                "Today’s highlights card now respects the four-station class structure — main lift hero plus at most three mini rows labelled STN 2 / STN 3 / STN 4. No more STN 5–STN 8 from accessory exercises bleeding into the row count.",
+                "Progress and Body tabs lost the dead 16pt of vertical padding above the first card — content now sits where the large title visually expects it instead of floating mid-screen."
+            ]
+        ),
+        Entry(
+            version: "0.6.5",
+            date: dateFrom("2026-04-22"),
+            highlights: [
+                "Live Activity is actually informative now: shows the current station + exercise name (e.g. ‘STATION 1 · BB Squats’) instead of duplicating the workout name. Set counter reads ‘Set X of Y’ once you’ve opened an exercise, or ‘N ✓ this session’ before then.",
+                "Minimize pill now picks up the same section + exercise label, and sits with proper breathing room above the tab bar (no more lime border kissing the Home/Progress/Body/Settings labels)."
+            ]
+        ),
+        Entry(
             version: "0.6.4",
             date: dateFrom("2026-04-22"),
             highlights: [

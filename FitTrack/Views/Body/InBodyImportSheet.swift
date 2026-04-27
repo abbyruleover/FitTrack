@@ -292,9 +292,9 @@ struct InBodyImportSheet: View {
                         .font(Theme.Fonts.body(13))
                         .foregroundStyle(Theme.Colors.textSecondary)
                         .lineLimit(1)
-                    Text(longDate(scan.scanDate))
-                        .font(Theme.Fonts.mono(11))
-                        .foregroundStyle(Theme.Colors.textTertiary)
+                    DatePicker("", selection: scanBinding.scanDate, displayedComponents: [.date, .hourAndMinute])
+                        .labelsHidden()
+                        .tint(Theme.Colors.accent)
                 }
                 Spacer()
                 Button("Replace") { pickerOpen = true }
@@ -433,7 +433,7 @@ struct InBodyImportSheet: View {
                         // accessible for the entire parse.
                         let needsScope = url.startAccessingSecurityScopedResource()
                         defer { if needsScope { url.stopAccessingSecurityScopedResource() } }
-                        return try InBodyPDFParser.parse(url: url) { frac, msg in
+                        return try await InBodyPDFParser.smartParse(url: url) { frac, msg in
                             Task { @MainActor in
                                 progress.fraction = frac
                                 progress.status = msg
@@ -493,7 +493,7 @@ struct InBodyImportSheet: View {
         let progress = parseProgress
         do {
             let parsed = try await Task.detached(priority: .userInitiated) {
-                try InBodyPDFParser.parse(image: image, filename: source) { frac, msg in
+                try await InBodyPDFParser.smartParse(image: image, filename: source) { frac, msg in
                     Task { @MainActor in
                         progress.fraction = frac
                         progress.status = msg

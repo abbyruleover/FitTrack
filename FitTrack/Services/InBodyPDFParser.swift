@@ -134,6 +134,99 @@ enum InBodyPDFParser {
         return scan
     }
 
+    // MARK: - Smart parse (LLM-first, regex fallback)
+
+    /// Try the on-device LLM first, fall back to regex/bbox if unavailable.
+    static func smartParse(url: URL, onProgress: (@Sendable (Double, String) -> Void)? = nil) async throws -> Scan {
+        onProgress?(0.05, "Opening PDF")
+        guard let doc = PDFDocument(url: url) else { throw ParseError.unreadable }
+        var raw = ""
+        for i in 0..<doc.pageCount {
+            if let page = doc.page(at: i), let str = page.string {
+                raw += str + "\n"
+            }
+        }
+
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let filename = url.lastPathComponent
+
+        if !trimmed.isEmpty {
+            // Digital export — try LLM on the clean text.
+            do {
+                if let llmScan = try await FoundationModelsInBodyParser.parse(
+                    text: raw, filename: filename, fallbackDate: Date()
+                ) {
+                    onProgress?(1.0, "Done")
+                    AppLogger.shared.log("InBody smartParse(url): LLM path OK", category: "inbody")
+                    return llmScan
+                }
+            } catch {
+                AppLogger.shared.log("InBody smartParse(url): LLM failed (\(error.localizedDescription)) — falling back to regex", category: "inbody")
+            }
+            onProgress?(0.5, "Extracting metrics")
+            var scan = Scan(scanDate: Date(), pdfFilename: filename)
+            parseFromString(raw, into: &scan)
+            onProgress?(1.0, "Done")
+            return scan
+        } else {
+            // Image-only PDF — OCR first, then try LLM on the OCR text.
+            let boxes = ocrAllPagesWithBoxes(of: doc, onProgress: onProgress)
+            guard !boxes.isEmpty else { throw ParseError.empty }
+
+            let ocrText = boxes
+                .sorted { $0.midY > $1.midY }
+                .map { $0.text }
+                .joined(separator: " ")
+            do {
+                if let llmScan = try await FoundationModelsInBodyParser.parse(
+                    text: ocrText, filename: filename, fallbackDate: Date()
+                ) {
+                    onProgress?(1.0, "Done")
+                    AppLogger.shared.log("InBody smartParse(url): LLM path OK (image-only PDF)", category: "inbody")
+                    return llmScan
+                }
+            } catch {
+                AppLogger.shared.log("InBody smartParse(url): LLM failed on OCR text (\(error.localizedDescription)) — falling back to bbox", category: "inbody")
+            }
+            onProgress?(0.95, "Extracting metrics")
+            var scan = Scan(scanDate: Date(), pdfFilename: filename)
+            parseFromBoxes(boxes, into: &scan)
+            onProgress?(1.0, "Done")
+            return scan
+        }
+    }
+
+    /// Try the on-device LLM on image OCR text first, fall back to bbox.
+    static func smartParse(image: UIImage, filename: String = "photo.jpg",
+                           onProgress: (@Sendable (Double, String) -> Void)? = nil) async throws -> Scan {
+        onProgress?(0.05, "Preparing image")
+        let boxes = ocrImageWithBoxes(image, onProgress: onProgress)
+        AppLogger.shared.log("InBody image OCR returned \(boxes.count) text boxes", category: "inbody")
+        guard !boxes.isEmpty else { throw ParseError.empty }
+
+        let ocrText = boxes
+            .sorted { $0.midY > $1.midY }
+            .map { $0.text }
+            .joined(separator: " ")
+        do {
+            if let llmScan = try await FoundationModelsInBodyParser.parse(
+                text: ocrText, filename: filename, fallbackDate: Date()
+            ) {
+                onProgress?(1.0, "Done")
+                AppLogger.shared.log("InBody smartParse(image): LLM path OK", category: "inbody")
+                return llmScan
+            }
+        } catch {
+            AppLogger.shared.log("InBody smartParse(image): LLM failed (\(error.localizedDescription)) — falling back to bbox", category: "inbody")
+        }
+
+        onProgress?(0.95, "Extracting metrics")
+        var scan = Scan(scanDate: Date(), pdfFilename: filename)
+        parseFromBoxes(boxes, into: &scan)
+        onProgress?(1.0, "Done")
+        return scan
+    }
+
     /// Run Vision text recognition on a UIImage. Returns each observation as
     /// a `TextBox` keyed by its normalized bbox so the same `parseFromBoxes`
     /// path that handles photo-PDFs can extract metrics spatially.

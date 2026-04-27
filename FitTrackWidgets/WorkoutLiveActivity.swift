@@ -64,7 +64,7 @@ struct WorkoutLiveActivity: Widget {
                                 .foregroundStyle(.white.opacity(0.55))
                         }
                         if let last = context.state.lastSetSummary {
-                            HStack(spacing: 6) {
+                            HStack(spacing: 8) {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 12, weight: .semibold))
                                     .foregroundStyle(accent)
@@ -98,8 +98,14 @@ struct WorkoutLiveActivity: Widget {
     }
 
     private func setOfLabel(state: WorkoutActivityAttributes.ContentState) -> String {
-        let total = max(state.totalSetsForExercise, state.currentSetIndex)
-        return "Set \(state.currentSetIndex) of \(total)"
+        // Once at least one set has been opened, render "Set X of Y".
+        // Before then (no drafts), show the session's overall ✓ count so the
+        // pill stays informative without lying about a per-exercise total.
+        if state.totalSetsForExercise > 0 {
+            let total = max(state.totalSetsForExercise, state.currentSetIndex)
+            return "Set \(state.currentSetIndex) of \(total)"
+        }
+        return "\(state.completedSetCount) ✓ this session"
     }
 }
 
@@ -112,6 +118,16 @@ private struct LockScreenView: View {
     let attributes: WorkoutActivityAttributes
 
     private let accent = Color(red: 0xD4 / 255, green: 0xF5 / 255, blue: 0x3C / 255)
+
+    /// Render-side mirror of `WorkoutLiveActivity.setOfLabel(state:)`. The
+    /// widget can't reach the parent struct's helper from inside this view.
+    private var setLabel: String {
+        if state.totalSetsForExercise > 0 {
+            let total = max(state.totalSetsForExercise, state.currentSetIndex)
+            return "Set \(state.currentSetIndex) of \(total)"
+        }
+        return "\(state.completedSetCount) ✓ this session"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -145,11 +161,17 @@ private struct LockScreenView: View {
             HStack(alignment: .top, spacing: 10) {
                 ExerciseGlyph()
                 VStack(alignment: .leading, spacing: 2) {
+                    if let section = state.currentExerciseSection {
+                        Text(section.uppercased())
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(accent.opacity(0.8))
+                            .tracking(0.5)
+                    }
                     Text(state.currentExerciseName)
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.white)
                         .lineLimit(2)
-                    Text("Set \(state.currentSetIndex) of \(max(state.totalSetsForExercise, state.currentSetIndex))")
+                    Text(setLabel)
                         .font(.system(size: 12, weight: .medium, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.55))
                 }

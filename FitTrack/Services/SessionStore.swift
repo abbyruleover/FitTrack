@@ -282,9 +282,14 @@ final class SessionStore: ObservableObject {
         isFinished = true
     }
 
-    /// Most recently touched exercise — drives the mini-pill subtitle while
-    /// the session is minimized. Falls back to the workout name when the user
-    /// hasn't checked anything yet.
+    /// Most recently touched exercise — drives the mini-pill subtitle and the
+    /// Live Activity body while the session is minimized. Resolution order:
+    ///   1. The exercise of the most recently completed set (real progress).
+    ///   2. The first loggable station's first exercise (sensible default
+    ///      before the user has tapped ✓ on anything).
+    ///   3. The workout name as a last resort.
+    /// Returning the workout name as a default produced a useless
+    /// "Thur WOD / Thur WOD" Live Activity card.
     var currentExerciseName: String {
         let allSets = drafts.flatMap { (name, rows) in
             rows.compactMap { row -> (String, NSManagedObjectID)? in
@@ -297,7 +302,20 @@ final class SessionStore: ObservableObject {
                   let d = obj.completedAt else { return nil }
             return (name, d)
         }
-        return resolved.max(by: { $0.1 < $1.1 })?.0 ?? workoutName
+        if let latest = resolved.max(by: { $0.1 < $1.1 })?.0 { return latest }
+        if let firstStationExercise = parsedWorkout.sections
+            .first(where: { $0.kind.isLoggable })?
+            .exercises.first?.name { return firstStationExercise }
+        return workoutName
+    }
+
+    /// Section title for the current exercise (e.g. "Station 1"). Used as the
+    /// Live Activity subtitle so the user can tell where in the class the
+    /// current exercise sits without opening the app.
+    var currentExerciseSection: String? {
+        let name = currentExerciseName
+        return parsedWorkout.sections
+            .first(where: { $0.exercises.contains(where: { $0.name == name }) })?.title
     }
 
     /// Pretty summary of the most recently logged set across the whole

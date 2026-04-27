@@ -30,6 +30,10 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>FitTrack uses the camera to capture photos of InBody printouts so it can OCR the metrics.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>FitTrack reads your calendar to show your next FNS Gym Class on the home screen.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>FitTrack reads your calendar to show your next FNS Gym Class on the home screen.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>FitTrack reads your body weight, heart rate, HRV, and Apple Watch workouts so it can chart trends alongside your training.</string>
 	<key>NSHealthUpdateUsageDescription</key>

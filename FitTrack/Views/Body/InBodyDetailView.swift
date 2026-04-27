@@ -13,7 +13,7 @@ struct InBodyDetailView: View {
     @State private var isEditing = false
     @State private var sourcePreviewURL: URL?
     @State private var saveError: String?
-    @FocusState private var anyFieldFocused: Bool
+    @FocusState private var focusedField: String?
 
     var body: some View {
         ScrollView {
@@ -55,7 +55,7 @@ struct InBodyDetailView: View {
             // can dismiss without rotating to a different row.
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Done") { anyFieldFocused = false }
+                Button("Done") { focusedField = nil }
             }
         }
         .quickLookPreview($sourcePreviewURL)
@@ -159,7 +159,7 @@ struct InBodyDetailView: View {
     // MARK: - Row groups
 
     private struct EditableRow: Identifiable {
-        let id = UUID()
+        var id: String { label }
         let label: String
         let unit: String
         let binding: Binding<Double>
@@ -235,11 +235,12 @@ struct InBodyDetailView: View {
             if isEditing {
                 TextField("0", value: row.binding, format: .number.precision(.fractionLength(0...2)))
                     .keyboardType(.decimalPad)
+                    .textFieldStyle(.plain)
                     .multilineTextAlignment(.trailing)
                     .font(Theme.Fonts.mono(12))
                     .foregroundStyle(row.binding.wrappedValue == 0 ? Theme.Colors.textTertiary : Theme.Colors.accent)
-                    .frame(maxWidth: 70)
-                    .focused($anyFieldFocused)
+                    .frame(maxWidth: 80)
+                    .focused($focusedField, equals: row.label)
                 Button {
                     row.binding.wrappedValue = 0
                 } label: {
@@ -259,6 +260,10 @@ struct InBodyDetailView: View {
                     .font(Theme.Fonts.mono(12))
                     .foregroundStyle(row.binding.wrappedValue == 0 ? Theme.Colors.textTertiary : Theme.Colors.accent)
             }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if isEditing { focusedField = row.label }
         }
         .padding(.vertical, Theme.Spacing.sm)
     }

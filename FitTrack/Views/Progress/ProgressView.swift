@@ -40,7 +40,7 @@ struct ProgressView: View {
                     exercisesSection
                 }
                 .padding(.horizontal, Theme.Spacing.md)
-                .padding(.vertical, Theme.Spacing.md)
+                .padding(.bottom, Theme.Spacing.md)
             }
             .scrollContentBackground(.hidden)
             .background(Theme.Colors.background)

@@ -62,4 +62,23 @@ enum AppStrings {
         static let body = "Body"
         static let settings = "Settings"
     }
+
+    /// Pool the Home welcome card cycles through one-per-day. Picked
+    /// deterministically by `dayOfYear % count` so the same line stays put
+    /// from morning to night and rotates fresh tomorrow. Twelve entries means
+    /// a tagline doesn't repeat within ~a week and a half.
+    static let motivationalTaglines: [String] = [
+        "Strong every day",
+        "Earn your rest day",
+        "Show up. Sets handle themselves.",
+        "Today's reps, tomorrow's gains",
+        "Nothing wasted by trying",
+        "Form first, weight second",
+        "You vs you",
+        "Slow is smooth, smooth is heavy",
+        "Quiet work, loud results",
+        "One more set",
+        "Discipline > motivation",
+        "Move well, then move much"
+    ]
 }

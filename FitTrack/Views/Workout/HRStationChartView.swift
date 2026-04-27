@@ -156,6 +156,7 @@ struct HRStationChartView: View {
             }
         }
         .frame(height: 240)
+        .clipped()
     }
 
     private var emptyChart: some View {

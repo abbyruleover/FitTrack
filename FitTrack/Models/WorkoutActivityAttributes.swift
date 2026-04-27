@@ -24,6 +24,9 @@ struct WorkoutActivityAttributes: ActivityAttributes {
         /// Most recently touched exercise (last ✓), or the first exercise in
         /// the workout if nothing logged yet.
         var currentExerciseName: String
+        /// Section title for the current exercise (e.g. "Station 1"). Optional
+        /// because warm-up / finisher sections aren't loggable.
+        var currentExerciseSection: String?
         /// 1-based index of the next not-yet-completed set for the current
         /// exercise. Falls back to `completedSetCount + 1` if all sets done.
         var currentSetIndex: Int

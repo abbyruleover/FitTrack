@@ -136,6 +136,7 @@ struct SessionHRTraceChart: View {
             .allowsHitTesting(false)
         }
         .frame(height: 220)
+        .clipped()
     }
 
     private func tooltipCard(for sample: HRPoint) -> some View {
