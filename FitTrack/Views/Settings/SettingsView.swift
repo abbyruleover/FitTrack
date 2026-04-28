@@ -304,13 +304,13 @@ struct SettingsView: View {
                 Label("Changelog", systemImage: "list.bullet.clipboard")
                     .foregroundStyle(Theme.Colors.textPrimary)
             }
-            if let url = URL(string: "https://abhaygulati.com/fittrack/privacy") {
+            if let url = URL(string: "https://fittrack.app/privacy") {
                 Link(destination: url) {
                     Label("Privacy Policy", systemImage: "hand.raised")
                         .foregroundStyle(Theme.Colors.textPrimary)
                 }
             }
-            if let url = URL(string: "mailto:fittrack@abhaygulati.com") {
+            if let url = URL(string: "mailto:support@fittrack.app") {
                 Link(destination: url) {
                     Label("Contact Support", systemImage: "envelope")
                         .foregroundStyle(Theme.Colors.textPrimary)

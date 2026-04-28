@@ -21,7 +21,7 @@ final class AppLogger: ObservableObject {
     /// On-disk file URL — exposed so the sheet can show a `ShareLink`.
     let logFileURL: URL
 
-    private let osLogger = Logger(subsystem: "com.abhaygulati.fittrack.ag2026", category: "app")
+    private let osLogger = Logger(subsystem: "com.fittrack.app", category: "app")
     private static let maxLinesInMemory = 1000
     private static let maxFileBytes: UInt64 = 10 * 1024 * 1024  // 10 MB hard cap
 
@@ -31,7 +31,7 @@ final class AppLogger: ObservableObject {
         return f
     }()
 
-    private let writeQueue = DispatchQueue(label: "com.abhaygulati.fittrack.applogger", qos: .utility)
+    private let writeQueue = DispatchQueue(label: "com.fittrack.applogger", qos: .utility)
 
     private init() {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!

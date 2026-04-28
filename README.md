@@ -1,12 +1,10 @@
 # FitTrack
 
-A personal iOS workout tracker built around the FNS / Equinox class structure
+A personal iOS workout tracker built around a CrossFit-style class structure
 (warm-up + 4 strength stations × 8 min). Imports class WOD PDFs, logs sets
 live, surfaces stats from Apple Watch HIIT sessions, tracks InBody scans, and
 ships a Hevy-style Live Activity on the lock screen + Dynamic Island while
 you're training.
-
-Created by Abhay Gulati.
 
 ## Requirements
 
