@@ -3,6 +3,7 @@ import CoreData
 import SwiftUI
 import ActivityKit
 import Combine
+import WidgetKit
 
 /// App-wide owner of the currently-running `SessionStore`.
 ///
@@ -76,6 +77,7 @@ final class ActiveSessionService: ObservableObject {
         endLiveActivity(reason: .finished)
         current = nil
         isPresentingSession = false
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     /// Trash button on the mini-pill. Wipes the session and cascades to any

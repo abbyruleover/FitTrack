@@ -3,6 +3,7 @@ import UniformTypeIdentifiers
 import CoreData
 import HealthKit
 import EventKit
+import WidgetKit
 
 /// Phase 5 home dashboard. Activity rings card at the top (taps into the
 /// Health app), then a "This Week" horizontal carousel of scheduled
@@ -113,6 +114,7 @@ struct WorkoutView: View {
             }
             .onChange(of: scenePhase) { _, phase in
                 guard phase == .active else { return }
+                WidgetCenter.shared.reloadAllTimelines()
                 Task {
                     await CalendarService.shared.requestAuthorizationIfNeeded()
                     nextCalendarClass = await CalendarService.shared.nextClass()

@@ -1,6 +1,7 @@
 import SwiftUI
 import HealthKit
 import CoreData
+import WidgetKit
 
 /// Progress tab — top-level dashboard with two stacked sections:
 ///   • Exercises  — horizontal carousel of large PR cards
@@ -78,6 +79,7 @@ struct ProgressView: View {
                 if let shared = UserDefaults(suiteName: PersistenceController.appGroupID) {
                     shared.set(hiitDays.map { $0.timeIntervalSince1970 }, forKey: "cachedHiitDays")
                 }
+                WidgetCenter.shared.reloadAllTimelines()
                 async let h = HealthKitService.shared.latestHRVms()
                 async let k = HealthKitService.shared.weeklyActiveEnergyKcal()
                 async let m = HealthKitService.shared.weeklyExerciseMinutes()
