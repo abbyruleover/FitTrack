@@ -20,11 +20,15 @@ struct BodyView: View {
     ) private var inBodyEntries: FetchedResults<InBodyEntry>
 
     @State private var showingImport = false
+    @State private var insightText: String?
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                    if let insight = insightText {
+                        insightsCard(text: insight)
+                    }
                     if let latest = inBodyEntries.last {
                         latestScanCard(latest)
                         if inBodyEntries.count >= 2 {
@@ -61,7 +65,36 @@ struct BodyView: View {
             .onAppear {
                 AppLogger.shared.log("BodyView appeared (\(inBodyEntries.count) scans)", category: "ui")
             }
+            .task {
+                if #available(iOS 26.0, *) {
+                    insightText = await BodyInsightsService.generate(entries: Array(inBodyEntries))
+                }
+            }
         }
+    }
+
+    // MARK: - Insights
+
+    private func insightsCard(text: String) -> some View {
+        HStack(alignment: .top, spacing: Theme.Spacing.sm) {
+            Image(systemName: "brain.head.profile")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Theme.Colors.accent)
+                .padding(.top, 2)
+            Text(text)
+                .font(Theme.Fonts.body(13))
+                .foregroundStyle(Theme.Colors.textPrimary)
+        }
+        .padding(Theme.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.Radius.md)
+                .fill(Theme.Colors.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.md)
+                .stroke(Theme.Colors.accent.opacity(0.3), lineWidth: 1)
+        )
     }
 
     // MARK: - Latest scan hero

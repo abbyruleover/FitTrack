@@ -583,6 +583,7 @@ struct InBodyImportSheet: View {
             }
         }
         AppLogger.shared.log("InBody save complete — dismissing", category: "inbody")
+        BodyInsightsService.invalidateCache()
         dismiss()
     }
 
